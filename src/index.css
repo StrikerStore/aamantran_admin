@@ -1,0 +1,113 @@
+/* ══════════════════════════════════════════════════════════
+   AAMANTRAN ADMIN — Global Styles & Design Tokens
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: light;
+
+  /* Backgrounds */
+  --bg-base:     #f5f3ef;
+  --bg-surface:  #ffffff;
+  --bg-elevated: #f0ede8;
+  --bg-overlay:  #e8e4dc;
+
+  /* Brand */
+  --gold:        #b8912e;
+  --gold-light:  #c9a84c;
+  --red:         #c94030;
+  --green:       #2a9e68;
+  --blue:        #2f7fd4;
+
+  /* Text */
+  --text-primary:   #1c1a18;
+  --text-secondary: #4a4760;
+  --text-muted:     #9490a4;
+
+  /* Borders */
+  --border-subtle:  rgba(0,0,0,0.07);
+  --border-default: rgba(0,0,0,0.13);
+  --border-strong:  rgba(0,0,0,0.22);
+  --border-gold:    rgba(184,145,46,0.4);
+
+  /* Sidebar */
+  --sidebar-w: 240px;
+  --sidebar-bg: #ffffff;
+
+  /* Radius */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+
+  /* Transitions */
+  --t-fast: 140ms cubic-bezier(0.4,0,0.2,1);
+  --t-base: 220ms cubic-bezier(0.4,0,0.2,1);
+
+  /* Shadows */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,0.14);
+  --shadow-gold: 0 0 0 1px rgba(184,145,46,0.25), 0 4px 20px rgba(184,145,46,0.10);
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--gold); text-decoration: none; }
+img { display: block; max-width: 100%; }
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-overlay); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* ── Page fade-in ── */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-fade { animation: pageFadeIn 0.28s ease-out; }
+
+/* ── Spinner ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast slide-in ── */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Modal ── */
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Mono ── */
+code, .mono {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.82rem;
+  background: var(--bg-elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--gold);
+}

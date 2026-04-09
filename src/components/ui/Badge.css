@@ -1,0 +1,28 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.badge-active   { background: rgba(61,189,130,0.12);  color: #3dbd82; border: 1px solid rgba(61,189,130,0.25); }
+.badge-draft    { background: rgba(154,155,173,0.12); color: #9a9bad; border: 1px solid rgba(154,155,173,0.25); }
+.badge-pending  { background: rgba(201,168,76,0.12);  color: #c9a84c; border: 1px solid rgba(201,168,76,0.25); }
+.badge-paid     { background: rgba(61,189,130,0.12);  color: #3dbd82; border: 1px solid rgba(61,189,130,0.25); }
+.badge-failed   { background: rgba(217,79,61,0.12);   color: #d94f3d; border: 1px solid rgba(217,79,61,0.25); }
+.badge-refunded { background: rgba(74,144,226,0.12);  color: #4a90e2; border: 1px solid rgba(74,144,226,0.25); }
+.badge-open     { background: rgba(201,168,76,0.12);  color: #c9a84c; border: 1px solid rgba(201,168,76,0.25); }
+.badge-resolved { background: rgba(61,189,130,0.12);  color: #3dbd82; border: 1px solid rgba(61,189,130,0.25); }
