@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
+import { getInviteBaseUrl } from '../lib/config';
 import { formatCurrency } from '../lib/utils';
 import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES } from '../lib/constants';
 import { Button } from '../components/ui/Button';
@@ -27,7 +28,16 @@ function emptyCustomFieldRow() {
 }
 
 function emptyMediaSlotRow() {
-  return { key: '', label: '', type: 'photo', multiple: false, max: 4, accept: '', allowUrl: true };
+  return { key: '', label: '', type: 'photo', multiple: false, max: 4, accept: '', allowUrl: true, demoFiles: [], pendingDemoUploads: [] };
+}
+
+/** Same normalization as buildFieldSchema media slot keys */
+function normalizeMediaSlotKey(key) {
+  return String(key || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+}
+
+function makePendingUploadId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 function emptyDemoFunctionRow(sortOrder = 0) {
@@ -56,8 +66,10 @@ export default function TemplateForm() {
   const zipRef          = useRef(null);
   const desktopThumbRef = useRef(null);
   const mobileThumbRef  = useRef(null);
+  const pendingDemoObjectUrlsRef = useRef(new Set());
 
   // ── Section 1: Template metadata ──
+  const [slug,          setSlug]          = useState('');
   const [name,          setName]          = useState('');
   const [community,     setCommunity]     = useState('hindu');
   const [bestFor,       setBestFor]       = useState([]);
@@ -98,11 +110,17 @@ export default function TemplateForm() {
     setTopbarTitle(isEdit ? 'Edit Template' : 'Add Template');
   }, [isEdit]);
 
+  useEffect(() => () => {
+    pendingDemoObjectUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    pendingDemoObjectUrlsRef.current.clear();
+  }, []);
+
   // ── Load existing template for edit ──
   useEffect(() => {
     if (!isEdit) return;
     api.templates.get(id).then(res => {
       const t = res.data;
+      setSlug(t.slug || '');
       setName(t.name);
       setCommunity(t.community);
       setBestFor(t.bestFor ? t.bestFor.split(', ').filter(Boolean) : []);
@@ -164,6 +182,7 @@ export default function TemplateForm() {
           });
         }
         if (Array.isArray(fs.mediaSlots) && fs.mediaSlots.length) {
+          const demoMedia = t.demoData?.mediaSlotDemoUrls || {};
           setMediaSlots(fs.mediaSlots.map((s) => ({
             key: s.key || '',
             label: s.label || '',
@@ -172,6 +191,8 @@ export default function TemplateForm() {
             max: s.max != null ? Number(s.max) : (s.multiple ? 6 : 1),
             accept: s.accept || '',
             allowUrl: s.allowUrl !== false,
+            demoFiles: Array.isArray(demoMedia[s.key]) ? demoMedia[s.key] : (demoMedia[s.key] ? [demoMedia[s.key]] : []),
+            pendingDemoUploads: [],
           })));
         } else {
           setMediaSlots([]);
@@ -219,9 +240,33 @@ export default function TemplateForm() {
   function removeCustomField(i)   { setCustomFields(prev => prev.filter((_, idx) => idx !== i)); }
 
   function addMediaSlot()         { setMediaSlots(prev => [...prev, emptyMediaSlotRow()]); }
-  function removeMediaSlot(i)     { setMediaSlots(prev => prev.filter((_, idx) => idx !== i)); }
+  function removeMediaSlot(i) {
+    setMediaSlots((prev) => {
+      const row = prev[i];
+      row?.pendingDemoUploads?.forEach((p) => revokePendingDemoPreview(p.objectUrl));
+      return prev.filter((_, idx) => idx !== i);
+    });
+  }
   function updateMediaSlot(i, key, val) {
     setMediaSlots(prev => prev.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
+  }
+  function revokePendingDemoPreview(url) {
+    if (!url) return;
+    URL.revokeObjectURL(url);
+    pendingDemoObjectUrlsRef.current.delete(url);
+  }
+  function removePendingDemoUpload(slotIndex, pendingId) {
+    setMediaSlots(prev => prev.map((row, idx) => {
+      if (idx !== slotIndex) return row;
+      const pendingDemoUploads = (row.pendingDemoUploads || []).filter((p) => {
+        if (p.id === pendingId) {
+          revokePendingDemoPreview(p.objectUrl);
+          return false;
+        }
+        return true;
+      });
+      return { ...row, pendingDemoUploads };
+    }));
   }
   function updateCustomField(i, key, val) {
     setCustomFields(prev => prev.map((cf, idx) => {
@@ -300,6 +345,12 @@ export default function TemplateForm() {
     const groomPerson = people.find(p => p.role === 'groom');
     const photoUrls = demoPhotoUrls.split(',').map(s => s.trim()).filter(Boolean);
 
+    // Build media slot demo URL map { ganesh: ["https://..."], background_music: ["https://..."] }
+    const mediaSlotDemoUrls = {};
+    mediaSlots.forEach(s => {
+      if (s.key && s.demoFiles?.length) mediaSlotDemoUrls[s.key] = s.demoFiles;
+    });
+
     return {
       bride_name:    bridePerson?.demoName || '',
       groom_name:    groomPerson?.demoName || '',
@@ -309,6 +360,7 @@ export default function TemplateForm() {
       language:      demoLanguage,
       photo_urls:    photoUrls,
       music_url:     demoMusicUrl || null,
+      media_slot_demo_urls: mediaSlotDemoUrls,
       people: people.filter(p => p.role).map(p => ({
         role: p.role, name: p.demoName || '', photo_url: '',
       })),
@@ -368,6 +420,13 @@ export default function TemplateForm() {
           setSaving(false);
           return;
         }
+        for (const row of mediaSlots) {
+          if ((row.pendingDemoUploads || []).length && !normalizeMediaSlotKey(row.key)) {
+            toast('Set a key on every media slot that has demo files to upload', 'error');
+            setSaving(false);
+            return;
+          }
+        }
 
         const fd = new FormData();
         fd.append('name',         name);
@@ -387,8 +446,32 @@ export default function TemplateForm() {
         if (mobileThumbFile) fd.append('mobileThumbnailImage', mobileThumbFile);
 
         const res = await api.templates.create(fd);
+        const tplId = res.data?.id;
+        let demoMediaErr = null;
+        if (tplId) {
+          try {
+            for (const row of mediaSlots) {
+              const slotKey = normalizeMediaSlotKey(row.key);
+              if (!slotKey || !(row.pendingDemoUploads || []).length) continue;
+              for (const p of row.pendingDemoUploads) {
+                const mfd = new FormData();
+                mfd.append('file', p.file);
+                mfd.append('slotKey', slotKey);
+                await api.templates.uploadDemoMedia(tplId, mfd);
+              }
+            }
+          } catch (err) {
+            demoMediaErr = err;
+          }
+        }
+        mediaSlots.forEach((s) => s.pendingDemoUploads?.forEach((p) => revokePendingDemoPreview(p.objectUrl)));
+        setMediaSlots((prev) => prev.map((s) => ({ ...s, pendingDemoUploads: [] })));
         setDemoUrl(res.demoUrl);
-        toast('Template created — review the demo before publishing', 'success');
+        if (demoMediaErr) {
+          toast(demoMediaErr.message || 'Template created but some demo media failed to upload. Open the template to retry.', 'error');
+        } else {
+          toast('Template created — review the demo before publishing', 'success');
+        }
       }
     } catch (err) {
       toast(err.message || 'Save failed', 'error');
@@ -795,6 +878,116 @@ export default function TemplateForm() {
                     </label>
                   </div>
                 </div>
+                <div className="form-group" style={{ marginBottom: 4 }}>
+                  <label className="form-label">
+                    Demo media (for preview)
+                    {row.multiple ? ` (${(row.demoFiles?.length || 0) + (row.pendingDemoUploads?.length || 0)}/${row.max})` : ''}
+                  </label>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                    {!isEdit
+                      ? 'Files are uploaded right after you create the template. Enter the slot key first.'
+                      : 'Upload replaces storage immediately; remove to delete from the server.'}
+                  </p>
+                  {/* Saved demo files (edit only) */}
+                  {(row.demoFiles || []).length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                      {row.demoFiles.map((fileUrl, fi) => (
+                        <div key={fi} style={{ position: 'relative', border: '1px solid var(--border-subtle)', borderRadius: 'var(--r-sm)', padding: 4, background: 'var(--bg-base)' }}>
+                          {row.type === 'photo' || row.type === 'video' ? (
+                            <img src={resolvePublicUrl(fileUrl)} alt={`${row.key} demo ${fi + 1}`} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, display: 'block' }} />
+                          ) : (
+                            <div style={{ width: 80, height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', gap: 4 }}>
+                              <span style={{ fontSize: '1.4rem' }}>&#9835;</span>
+                              <span>Audio</span>
+                            </div>
+                          )}
+                          {isEdit && id && (
+                            <button type="button" onClick={async () => {
+                              try {
+                                await api.templates.deleteDemoMedia(id, row.key, fileUrl);
+                                updateMediaSlot(i, 'demoFiles', row.demoFiles.filter((_, j) => j !== fi));
+                                toast('Removed', 'success');
+                              } catch (err) { toast(err.message, 'error'); }
+                            }} style={{ position: 'absolute', top: -6, right: -6, background: 'var(--red)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }} title="Remove">&times;</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Staged uploads (create flow — sent after template is created) */}
+                  {(row.pendingDemoUploads || []).length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                      {(row.pendingDemoUploads || []).map((p) => (
+                        <div key={p.id} style={{ position: 'relative', border: '1px dashed var(--border-default)', borderRadius: 'var(--r-sm)', padding: 4, background: 'var(--bg-base)' }}>
+                          {row.type === 'photo' ? (
+                            <img src={p.objectUrl} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, display: 'block' }} />
+                          ) : row.type === 'video' ? (
+                            <video src={p.objectUrl} muted playsInline style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, display: 'block' }} />
+                          ) : (
+                            <div style={{ width: 80, height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', gap: 4 }}>
+                              <span style={{ fontSize: '1.4rem' }}>&#9835;</span>
+                              <span>Audio</span>
+                            </div>
+                          )}
+                          <button type="button" onClick={() => removePendingDemoUpload(i, p.id)} style={{ position: 'absolute', top: -6, right: -6, background: 'var(--red)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }} title="Remove">&times;</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {(() => {
+                    const maxCount = row.multiple ? row.max : 1;
+                    const used = (row.demoFiles?.length || 0) + (row.pendingDemoUploads?.length || 0);
+                    return used < maxCount;
+                  })() && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <input
+                        type="file"
+                        accept={row.accept || (row.type === 'music' ? 'audio/*' : row.type === 'video' ? 'video/*' : 'image/*')}
+                        multiple={row.multiple}
+                        onChange={async (e) => {
+                          const files = [...(e.target.files || [])];
+                          e.target.value = '';
+                          if (!files.length) return;
+                          const slotKey = normalizeMediaSlotKey(row.key);
+                          if (!slotKey) {
+                            toast('Enter a slot key before uploading demo media', 'error');
+                            return;
+                          }
+                          const maxCount = row.multiple ? row.max : 1;
+                          const used = (row.demoFiles?.length || 0) + (row.pendingDemoUploads?.length || 0);
+                          const room = maxCount - used;
+                          if (room <= 0) return;
+                          const batch = files.slice(0, Math.max(1, room));
+                          if (isEdit && id) {
+                            const newUrls = [];
+                            for (const file of batch) {
+                              try {
+                                const fd = new FormData();
+                                fd.append('file', file);
+                                fd.append('slotKey', slotKey);
+                                const up = await api.templates.uploadDemoMedia(id, fd);
+                                newUrls.push(up.url);
+                              } catch (err) { toast(err.message, 'error'); }
+                            }
+                            if (newUrls.length) {
+                              updateMediaSlot(i, 'demoFiles', [...(row.demoFiles || []), ...newUrls]);
+                              toast(`Uploaded ${newUrls.length} file(s)`, 'success');
+                            }
+                          } else {
+                            const additions = batch.map((file) => {
+                              const objectUrl = URL.createObjectURL(file);
+                              pendingDemoObjectUrlsRef.current.add(objectUrl);
+                              return { id: makePendingUploadId(), file, objectUrl };
+                            });
+                            updateMediaSlot(i, 'pendingDemoUploads', [...(row.pendingDemoUploads || []), ...additions]);
+                            toast(additions.length > 1 ? `Staged ${additions.length} files — they upload when you create the template` : 'Staged — uploads when you create the template', 'success');
+                          }
+                        }}
+                        style={{ fontSize: '0.84rem' }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             <Button type="button" size="sm" variant="secondary" onClick={addMediaSlot} style={{ marginTop: 4 }}>+ Add media slot</Button>
@@ -915,8 +1108,14 @@ export default function TemplateForm() {
         </div>
 
         {/* ── Actions ── */}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingBottom: 40 }}>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingBottom: 40, flexWrap: 'wrap' }}>
           <Button variant="secondary" type="button" onClick={() => navigate('/templates')}>Cancel</Button>
+          {isEdit && slug && (
+            <Button variant="secondary" type="button" onClick={() => {
+              const base = getInviteBaseUrl();
+              window.open(`${base}/demo/${slug}`, '_blank');
+            }}>Preview Demo</Button>
+          )}
           <Button variant="primary" type="submit" loading={saving}>{isEdit ? 'Save Changes' : 'Create Template'}</Button>
           {isEdit && <Button variant="success" type="button" loading={saving} onClick={handlePublish}>Publish Template</Button>}
         </div>
