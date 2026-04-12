@@ -69,7 +69,7 @@ export default function TransactionDetail() {
               View User
             </Button>
           )}
-          {tx.status === 'paid' && (
+          {tx.status === 'paid' && tx.payuMihpayid && (
             <Button variant="danger" onClick={() => setConfirm(true)}>
               Issue Refund
             </Button>
@@ -90,25 +90,13 @@ export default function TransactionDetail() {
                   <tr><td>Currency</td><td>{tx.currency}</td></tr>
                   <tr><td>Template</td><td>{tx.template?.name || '—'}</td></tr>
                   <tr><td>Date</td><td>{formatDateTime(tx.createdAt)}</td></tr>
-                  <tr><td>Razorpay Order ID</td><td><span className="mono">{tx.razorpayOrderId || '—'}</span></td></tr>
-                  <tr><td>Razorpay Payment ID</td><td><span className="mono">{tx.razorpayPaymentId || '—'}</span></td></tr>
+                  <tr><td>PayU Txn ID</td><td><span className="mono">{tx.payuTxnId || '—'}</span></td></tr>
+                  <tr><td>PayU Mihpayid</td><td><span className="mono">{tx.payuMihpayid || '—'}</span></td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Razorpay live data */}
-          {tx.razorpayData && (
-            <div className="card" style={{ marginBottom: 24 }}>
-              <div className="card-header"><span className="card-title">Razorpay Data</span></div>
-              <div className="card-body">
-                {tx.razorpayData.error
-                  ? <div className="alert alert-warning"><span>⚠</span>{tx.razorpayData.error}</div>
-                  : <div className="json-viewer">{JSON.stringify(tx.razorpayData, null, 2)}</div>
-                }
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right — user & event */}
