@@ -210,7 +210,7 @@ export default function TemplateForm() {
         setDemoFunctions(t.demoData.functions.map(fn => ({
           name: fn.name, date: fn.date, time: fn.time,
           venueName: fn.venueName || '', venueAddress: fn.venueAddress || '',
-          venueMapUrl: '', dressCode: '', sortOrder: fn.sortOrder,
+          venueMapUrl: fn.venueMapUrl || '', dressCode: fn.dressCode || '', sortOrder: fn.sortOrder,
         })));
       }
       if (t.demoData) {
@@ -373,6 +373,8 @@ export default function TemplateForm() {
         time: fn.time || '',
         venue_name: fn.venueName || '',
         venue_address: fn.venueAddress || '',
+        venue_map_url: fn.venueMapUrl || '',
+        dress_code: fn.dressCode || '',
         sort_order: fn.sortOrder ?? i,
       })),
       field_schema: buildFieldSchema(),
@@ -1069,6 +1071,12 @@ export default function TemplateForm() {
                     <div className="form-group" style={{ marginBottom: 8 }}>
                       <label className="form-label">Venue Address</label>
                       <input className="form-input" value={fn.venueAddress} onChange={e => updateDemoFunction(i, 'venueAddress', e.target.value)} />
+                    </div>
+                  )}
+                  {functionFields.venueMapUrl.enabled && (
+                    <div className="form-group" style={{ marginBottom: 8 }}>
+                      <label className="form-label">Google Maps Link</label>
+                      <input className="form-input" value={fn.venueMapUrl} onChange={e => updateDemoFunction(i, 'venueMapUrl', e.target.value)} placeholder="https://maps.google.com/..." />
                     </div>
                   )}
                   {functionFields.dressCode.enabled && (
