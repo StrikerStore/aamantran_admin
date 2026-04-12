@@ -317,6 +317,36 @@ export default function TemplateForm() {
     setMobileThumbPreview(URL.createObjectURL(file));
     setMobileThumbFallback(null);
   }
+  async function handleDeleteDesktopThumb(e) {
+    e.stopPropagation();
+    if (isEdit && id && desktopThumbPreview && !desktopThumbPreview.startsWith('blob:')) {
+      try {
+        await api.templates.deleteThumbnail(id, 'desktop');
+      } catch (err) {
+        toast(err.message || 'Failed to delete thumbnail', 'error');
+        return;
+      }
+    }
+    setDesktopThumbFile(null);
+    setDesktopThumbPreview(null);
+    setDesktopThumbFallback(null);
+    if (desktopThumbRef.current) desktopThumbRef.current.value = '';
+  }
+  async function handleDeleteMobileThumb(e) {
+    e.stopPropagation();
+    if (isEdit && id && mobileThumbPreview && !mobileThumbPreview.startsWith('blob:')) {
+      try {
+        await api.templates.deleteThumbnail(id, 'mobile');
+      } catch (err) {
+        toast(err.message || 'Failed to delete thumbnail', 'error');
+        return;
+      }
+    }
+    setMobileThumbFile(null);
+    setMobileThumbPreview(null);
+    setMobileThumbFallback(null);
+    if (mobileThumbRef.current) mobileThumbRef.current.value = '';
+  }
 
   // ── Build payloads ──
   function buildFieldSchema() {
@@ -567,7 +597,7 @@ export default function TemplateForm() {
                           if (cur.includes('/desktop-thumbnail')) { setDesktopThumbPreview(cur.replace('/desktop-thumbnail', '/thumbnail')); setDesktopThumbFallback(null); return; }
                           setDesktopThumbPreview(null);
                         }} />
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setDesktopThumbFile(null); setDesktopThumbPreview(null); setDesktopThumbFallback(null); if (desktopThumbRef.current) desktopThumbRef.current.value = ''; }}
+                      <button type="button" onClick={handleDeleteDesktopThumb}
                         style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 999, border: '1px solid rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.92)', color: '#333', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
                     </>
                   ) : (
@@ -588,7 +618,7 @@ export default function TemplateForm() {
                           if (cur.includes('/mobile-thumbnail')) { setMobileThumbPreview(cur.replace('/mobile-thumbnail', '/thumbnail')); setMobileThumbFallback(null); return; }
                           setMobileThumbPreview(null);
                         }} />
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setMobileThumbFile(null); setMobileThumbPreview(null); setMobileThumbFallback(null); if (mobileThumbRef.current) mobileThumbRef.current.value = ''; }}
+                      <button type="button" onClick={handleDeleteMobileThumb}
                         style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 999, border: '1px solid rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.92)', color: '#333', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
                     </>
                   ) : (

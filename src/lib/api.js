@@ -80,6 +80,7 @@ export const api = {
     updateDemoData:(id, body) => request('PUT',    `/templates/${id}/demo-data`, { body }),
     uploadDemoMedia: (id, fd) => request('POST',  `/templates/${id}/demo-media`, { body: fd, multipart: true }),
     deleteDemoMedia: (id, slotKey, url) => request('DELETE', `/templates/${id}/demo-media/${slotKey}`, { body: url ? { url } : undefined }),
+    deleteThumbnail: (id, variant) => request('DELETE', `/templates/${id}/thumbnail/${variant}`),
     publish:       (id)       => request('PATCH',  `/templates/${id}/publish`),
     draft:         (id)       => request('PATCH',  `/templates/${id}/draft`),
     remove:        (id)       => request('DELETE', `/templates/${id}`),
