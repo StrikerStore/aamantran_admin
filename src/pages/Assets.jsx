@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { api } from '../lib/api';
-import { PageHeader } from '../components/ui/PageHeader';
 import { useToast } from '../components/ui/Toast';
 import { ConfirmModal } from '../components/ui/Modal';
+
+function setTopbarTitle(t) {
+  const el = document.getElementById('topbar-title-slot');
+  if (el) el.textContent = t;
+}
 
 export default function Assets() {
   const [assets, setAssets] = useState([]);
@@ -12,6 +16,8 @@ export default function Assets() {
   
   const [form, setForm] = useState({ name: '', type: 'bg_music', file: null });
   const toast = useToast();
+
+  useLayoutEffect(() => { setTopbarTitle('Assets'); }, []);
 
   async function loadAssets() {
     setLoading(true);
@@ -67,11 +73,13 @@ export default function Assets() {
   }
 
   return (
-    <>
-      <PageHeader title="Global Assets" />
-      <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.95rem' }}>
-        Manage platform-wide assets (like background music) that users can pick from.
-      </p>
+    <div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Global Assets</h1>
+          <p className="page-subtitle">Manage platform-wide assets (like background music) that users can pick from.</p>
+        </div>
+      </div>
 
       <div className="card" style={{ marginBottom: 24 }}>
         <h3 style={{ marginBottom: 16 }}>Upload New Asset</h3>
@@ -160,6 +168,6 @@ export default function Assets() {
           onCancel={() => setDeletingAsset(null)}
         />
       )}
-    </>
+    </div>
   );
 }
