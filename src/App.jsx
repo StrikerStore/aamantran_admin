@@ -14,6 +14,7 @@ import TransactionDetail from './pages/TransactionDetail';
 import Coupons          from './pages/Coupons';
 import Tickets          from './pages/Tickets';
 import TicketDetail     from './pages/TicketDetail';
+import Assets           from './pages/Assets';
 
 function ProtectedRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/" replace />;
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="templates"              element={<Templates />} />
             <Route path="templates/new"          element={<TemplateForm />} />
             <Route path="templates/:id/edit"     element={<TemplateForm />} />
+            <Route path="assets"                 element={<Assets />} />
             <Route path="users"                  element={<Users />} />
             <Route path="users/:id"              element={<UserDetail />} />
             <Route path="transactions"           element={<Transactions />} />

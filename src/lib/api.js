@@ -126,6 +126,12 @@ export const api = {
     update: (id, body)        => request('PATCH', `/coupons/${id}`, { body }),
     remove: (id)              => request('DELETE', `/coupons/${id}`),
   },
+
+  assets: {
+    list:   ()     => request('GET', '/assets'),
+    upload: (fd)   => request('POST', '/assets', { body: fd, multipart: true }),
+    remove: (id)   => request('DELETE', `/assets/${id}`),
+  },
 };
 
 export { ApiError };
