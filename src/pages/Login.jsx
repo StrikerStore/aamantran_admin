@@ -10,6 +10,7 @@ export default function Login() {
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
 
   useEffect(() => {
     if (isAuthenticated()) navigate('/dashboard', { replace: true });
@@ -17,13 +18,16 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setError('');
     setLoading(true);
     try {
       const res = await api.auth.login(email, password);
       saveToken(res.token);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      toast(err.message || 'Login failed', 'error');
+      const msg = err.message || 'Login failed';
+      setError(msg);
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -97,17 +101,35 @@ export default function Login() {
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: 28 }}>
+            <div className="form-group" style={{ marginBottom: error ? 16 : 28 }}>
               <label className="form-label">Password</label>
               <input
                 type="password"
                 className="form-input"
                 placeholder="••••••••"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={e => { setPassword(e.target.value); if (error) setError(''); }}
                 required
               />
             </div>
+
+            {error && (
+              <div style={{
+                marginBottom: 20,
+                padding: '10px 14px',
+                borderRadius: 'var(--r-sm)',
+                background: 'rgba(220,53,69,0.08)',
+                border: '1px solid rgba(220,53,69,0.3)',
+                color: 'var(--red)',
+                fontSize: '0.84rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}>
+                <span style={{ fontSize: '1rem', lineHeight: 1 }}>&#9888;</span>
+                {error}
+              </div>
+            )}
 
             <button
               type="submit"

@@ -99,8 +99,11 @@ export default function TemplateForm() {
   // ── Section 3: Demo data (values for preview) ──
   const [demoFunctions, setDemoFunctions] = useState([emptyDemoFunctionRow(0)]);
   const [demoLanguage, setDemoLanguage]   = useState('en');
-  const [demoPhotoUrls, setDemoPhotoUrls] = useState('');
-  const [demoMusicUrl, setDemoMusicUrl]   = useState('');
+  const [demoInstagramUrl,     setDemoInstagramUrl]     = useState('');
+  const [demoSocialYoutubeUrl, setDemoSocialYoutubeUrl] = useState('');
+  const [demoWebsiteUrl,       setDemoWebsiteUrl]       = useState('');
+  const [demoRsvpEnabled,      setDemoRsvpEnabled]      = useState(true);
+  const [demoGuestNotesEnabled, setDemoGuestNotesEnabled] = useState(true);
 
   const [loading, setLoading] = useState(isEdit);
   const [saving,  setSaving]  = useState(false);
@@ -215,8 +218,11 @@ export default function TemplateForm() {
       }
       if (t.demoData) {
         setDemoLanguage(t.demoData.language || 'en');
-        setDemoPhotoUrls(Array.isArray(t.demoData.photoUrls) ? t.demoData.photoUrls.join(', ') : '');
-        setDemoMusicUrl(t.demoData.musicUrl || '');
+        setDemoInstagramUrl(t.demoData.instagramUrl || '');
+        setDemoSocialYoutubeUrl(t.demoData.socialYoutubeUrl || '');
+        setDemoWebsiteUrl(t.demoData.websiteUrl || '');
+        setDemoRsvpEnabled(t.demoData.rsvpEnabled !== false);
+        setDemoGuestNotesEnabled(t.demoData.guestNotesEnabled !== false);
       }
     }).catch(err => toast(err.message, 'error'))
       .finally(() => setLoading(false));
@@ -373,7 +379,6 @@ export default function TemplateForm() {
   function buildDemoPayload() {
     const bridePerson = people.find(p => p.role === 'bride');
     const groomPerson = people.find(p => p.role === 'groom');
-    const photoUrls = demoPhotoUrls.split(',').map(s => s.trim()).filter(Boolean);
 
     // Build media slot demo URL map { ganesh: ["https://..."], background_music: ["https://..."] }
     const mediaSlotDemoUrls = {};
@@ -388,8 +393,11 @@ export default function TemplateForm() {
       venue_name:    demoFunctions[0]?.venueName || '',
       venue_address: demoFunctions[0]?.venueAddress || '',
       language:      demoLanguage,
-      photo_urls:    photoUrls,
-      music_url:     demoMusicUrl || null,
+      instagram_url:       demoInstagramUrl     || null,
+      social_youtube_url:  demoSocialYoutubeUrl || null,
+      website_url:         demoWebsiteUrl       || null,
+      rsvp_enabled:        demoRsvpEnabled,
+      guest_notes_enabled: demoGuestNotesEnabled,
       media_slot_demo_urls: mediaSlotDemoUrls,
       people: people.filter(p => p.role).map(p => ({
         role: p.role, name: p.demoName || '', photo_url: '',
@@ -1126,21 +1134,45 @@ export default function TemplateForm() {
         <div className="card" style={sectionCard}>
           <div className="card-header"><span className="card-title">Demo Data — Other</span></div>
           <div className="card-body">
+            <div className="form-group">
+              <label className="form-label">Language</label>
+              <select className="form-select" value={demoLanguage} onChange={e => setDemoLanguage(e.target.value)}>
+                {LANGUAGES.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Links & Guests Demo Data ── */}
+        <div className="card" style={sectionCard}>
+          <div className="card-header"><span className="card-title">Demo Data — Links &amp; Guests</span></div>
+          <div className="card-body">
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
+              Social links and guest features shown in the demo preview. Leave links blank if the template does not use them.
+            </p>
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Language</label>
-                <select className="form-select" value={demoLanguage} onChange={e => setDemoLanguage(e.target.value)}>
-                  {LANGUAGES.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}
-                </select>
+                <label className="form-label">Instagram URL</label>
+                <input className="form-input" value={demoInstagramUrl} onChange={e => setDemoInstagramUrl(e.target.value)} placeholder="https://instagram.com/yourhandle" />
               </div>
               <div className="form-group">
-                <label className="form-label">Music URL</label>
-                <input className="form-input" value={demoMusicUrl} onChange={e => setDemoMusicUrl(e.target.value)} placeholder="https://..." />
+                <label className="form-label">YouTube URL</label>
+                <input className="form-input" value={demoSocialYoutubeUrl} onChange={e => setDemoSocialYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Photo URLs (comma-separated)</label>
-              <input className="form-input" value={demoPhotoUrls} onChange={e => setDemoPhotoUrls(e.target.value)} placeholder="https://img1.jpg, https://img2.jpg" />
+              <label className="form-label">Website URL</label>
+              <input className="form-input" value={demoWebsiteUrl} onChange={e => setDemoWebsiteUrl(e.target.value)} placeholder="https://yourwebsite.com" />
+            </div>
+            <div style={{ display: 'flex', gap: 24, marginTop: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.86rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={demoRsvpEnabled} onChange={e => setDemoRsvpEnabled(e.target.checked)} />
+                RSVP enabled
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.86rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={demoGuestNotesEnabled} onChange={e => setDemoGuestNotesEnabled(e.target.checked)} />
+                Guest notes / wishes enabled
+              </label>
             </div>
           </div>
         </div>
