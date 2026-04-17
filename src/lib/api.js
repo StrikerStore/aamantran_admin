@@ -56,8 +56,12 @@ async function request(method, path, { body, multipart = false, params } = {}) {
 
   if (res.status === 401) {
     const msg = json?.message || 'Session expired — please sign in again.';
+    const hadToken = !!localStorage.getItem('aam_admin_token');
     localStorage.removeItem('aam_admin_token');
-    window.location.href = '/';
+    // Only hard-redirect when a session was active (e.g. expired token mid-session).
+    // On the login page itself there is no token yet, so just throw and let the
+    // form's catch block display the error inline.
+    if (hadToken) window.location.href = '/';
     throw new ApiError(msg, 401, json);
   }
 
