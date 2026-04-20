@@ -538,14 +538,20 @@ export default function TemplateForm() {
     const nextNum = (currentVersion?.versionNumber || 0) + 1;
     const ok = window.confirm(
       `Snapshot the current draft as version v${nextNum}?\n\n` +
-      `• New purchases and swaps will render v${nextNum}.\n` +
-      `• Existing invites stay pinned to their current version.`
+      `• Every invitation using this template (published or not) will render v${nextNum}.\n` +
+      `• New purchases and swaps already use the current published version.`
     );
     if (!ok) return;
     setSaving(true);
     try {
-      await api.templates.publishChanges(id);
-      toast(`Published v${nextNum}`, 'success');
+      const res = await api.templates.publishChanges(id);
+      const updated = res?.data?.eventsUpdated;
+      toast(
+        typeof updated === 'number'
+          ? `Published v${nextNum} — ${updated} invitation(s) now on this version`
+          : `Published v${nextNum}`,
+        'success',
+      );
       const res = await api.templates.get(id);
       setCurrentVersion(res.data.currentVersion || null);
       setVersions(Array.isArray(res.data.versions) ? res.data.versions : []);
@@ -603,13 +609,13 @@ export default function TemplateForm() {
               <>
                 <div style={{ marginBottom: 8 }}>
                   <strong>Current published version:</strong> v{currentVersion.versionNumber}
-                  {' '}— new purchases and swaps will render this version.
+                  {' '}— new purchases and swaps use this version until you publish again.
                 </div>
                 <div style={{ marginBottom: 8, color: 'var(--text-secondary)' }}>
                   The demo (<code>/demo/{slug}</code>) always shows the live <strong>draft</strong>.
-                  Re-upload the zip and iterate freely — existing invites won't change.
-                  When the draft is ready, click <strong>Publish Changes</strong> to snapshot it
-                  as <code>v{(currentVersion?.versionNumber || 0) + 1}</code>.
+                  Re-upload the zip and iterate on the draft without affecting invitations until you click{' '}
+                  <strong>Publish Changes</strong>, which snapshots <code>v{(currentVersion?.versionNumber || 0) + 1}</code>{' '}
+                  and <strong>moves every invitation on this template</strong> to that version.
                 </div>
                 {versions.length > 0 && (
                   <div style={{ marginTop: 12 }}>
