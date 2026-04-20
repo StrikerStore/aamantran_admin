@@ -83,6 +83,8 @@ export default function TemplateForm() {
   const [aboutText,     setAboutText]     = useState('');
   const [zipFile,       setZipFile]       = useState(null);
   const [existingZipMeta, setExistingZipMeta] = useState(null);
+  const [currentVersion, setCurrentVersion] = useState(null);
+  const [versions, setVersions]             = useState([]);
   const [desktopThumbFile,    setDesktopThumbFile]    = useState(null);
   const [mobileThumbFile,     setMobileThumbFile]     = useState(null);
   const [desktopThumbPreview, setDesktopThumbPreview] = useState(null);
@@ -143,6 +145,8 @@ export default function TemplateForm() {
           mobileEntryFile: t.mobileEntryFile || null,
         });
       }
+      setCurrentVersion(t.currentVersion || null);
+      setVersions(Array.isArray(t.versions) ? t.versions : []);
       if (t.desktopThumbnailUrl || t.thumbnailUrl) {
         setDesktopThumbPreview(resolvePublicUrl(t.desktopThumbnailUrl || t.thumbnailUrl));
         setDesktopThumbFallback(
@@ -530,6 +534,25 @@ export default function TemplateForm() {
     finally { setSaving(false); }
   }
 
+  async function handlePublishChanges() {
+    const nextNum = (currentVersion?.versionNumber || 0) + 1;
+    const ok = window.confirm(
+      `Snapshot the current draft as version v${nextNum}?\n\n` +
+      `• New purchases and swaps will render v${nextNum}.\n` +
+      `• Existing invites stay pinned to their current version.`
+    );
+    if (!ok) return;
+    setSaving(true);
+    try {
+      await api.templates.publishChanges(id);
+      toast(`Published v${nextNum}`, 'success');
+      const res = await api.templates.get(id);
+      setCurrentVersion(res.data.currentVersion || null);
+      setVersions(Array.isArray(res.data.versions) ? res.data.versions : []);
+    } catch (err) { toast(err.message, 'error'); }
+    finally { setSaving(false); }
+  }
+
   if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>;
 
   const sectionCard = { marginBottom: 24 };
@@ -560,6 +583,67 @@ export default function TemplateForm() {
           <div>
             <strong>Template created!</strong> Review the demo before publishing:{' '}
             <a href={demoUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--green)', textDecoration: 'underline' }}>{demoUrl}</a>
+          </div>
+        </div>
+      )}
+
+      {isEdit && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-header">
+            <span className="card-title">Versions</span>
+          </div>
+          <div className="card-body" style={{ fontSize: '0.86rem' }}>
+            {!currentVersion && (
+              <div style={{ color: 'var(--text-secondary)' }}>
+                No version published yet. The draft is shown in demo and in any live invite until you publish.
+                Click <strong>Publish Template</strong> to snapshot the current draft as <code>v1</code>.
+              </div>
+            )}
+            {currentVersion && (
+              <>
+                <div style={{ marginBottom: 8 }}>
+                  <strong>Current published version:</strong> v{currentVersion.versionNumber}
+                  {' '}— new purchases and swaps will render this version.
+                </div>
+                <div style={{ marginBottom: 8, color: 'var(--text-secondary)' }}>
+                  The demo (<code>/demo/{slug}</code>) always shows the live <strong>draft</strong>.
+                  Re-upload the zip and iterate freely — existing invites won't change.
+                  When the draft is ready, click <strong>Publish Changes</strong> to snapshot it
+                  as <code>v{(currentVersion?.versionNumber || 0) + 1}</code>.
+                </div>
+                {versions.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>All versions</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
+                          <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>Version</th>
+                          <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>Created</th>
+                          <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>Events pinned</th>
+                          <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {versions.map(v => (
+                          <tr key={v.id}>
+                            <td style={{ padding: '4px 8px' }}>v{v.versionNumber}</td>
+                            <td style={{ padding: '4px 8px', color: 'var(--text-secondary)' }}>
+                              {v.createdAt ? new Date(v.createdAt).toLocaleString() : '—'}
+                            </td>
+                            <td style={{ padding: '4px 8px' }}>{v.eventCount ?? v._count?.events ?? 0}</td>
+                            <td style={{ padding: '4px 8px' }}>
+                              {v.id === currentVersion.id
+                                ? <span style={{ color: 'var(--green)', fontWeight: 600 }}>current</span>
+                                : <span style={{ color: 'var(--text-secondary)' }}>historical</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1187,7 +1271,14 @@ export default function TemplateForm() {
             }}>Preview Demo</Button>
           )}
           <Button variant="primary" type="submit" loading={saving}>{isEdit ? 'Save Changes' : 'Create Template'}</Button>
-          {isEdit && <Button variant="success" type="button" loading={saving} onClick={handlePublish}>Publish Template</Button>}
+          {isEdit && !currentVersion && (
+            <Button variant="success" type="button" loading={saving} onClick={handlePublish}>Publish Template</Button>
+          )}
+          {isEdit && currentVersion && (
+            <Button variant="success" type="button" loading={saving} onClick={handlePublishChanges}>
+              Publish Changes (→ v{(currentVersion?.versionNumber || 0) + 1})
+            </Button>
+          )}
         </div>
       </form>
     </div>

@@ -85,8 +85,9 @@ export const api = {
     uploadDemoMedia: (id, fd) => request('POST',  `/templates/${id}/demo-media`, { body: fd, multipart: true }),
     deleteDemoMedia: (id, slotKey, url) => request('DELETE', `/templates/${id}/demo-media/${slotKey}`, { body: url ? { url } : undefined }),
     deleteThumbnail: (id, variant) => request('DELETE', `/templates/${id}/thumbnail/${variant}`),
-    publish:       (id)       => request('PATCH',  `/templates/${id}/publish`),
-    draft:         (id)       => request('PATCH',  `/templates/${id}/draft`),
+    publish:        (id)      => request('PATCH', `/templates/${id}/publish`),
+    publishChanges: (id)      => request('POST',  `/templates/${id}/publish-changes`),
+    draft:          (id)      => request('PATCH', `/templates/${id}/draft`),
     remove:        (id)       => request('DELETE', `/templates/${id}`),
   },
 
