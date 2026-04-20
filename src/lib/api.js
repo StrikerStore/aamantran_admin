@@ -88,6 +88,8 @@ export const api = {
     publish:        (id)      => request('PATCH', `/templates/${id}/publish`),
     publishChanges: (id)      => request('POST',  `/templates/${id}/publish-changes`),
     draft:          (id)      => request('PATCH', `/templates/${id}/draft`),
+    deleteVersion:  (templateId, versionId) =>
+      request('DELETE', `/templates/${templateId}/versions/${versionId}`),
     remove:        (id)       => request('DELETE', `/templates/${id}`),
   },
 

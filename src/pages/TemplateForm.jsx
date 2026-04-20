@@ -110,6 +110,7 @@ export default function TemplateForm() {
 
   const [loading, setLoading] = useState(isEdit);
   const [saving,  setSaving]  = useState(false);
+  const [versionDeletingId, setVersionDeletingId] = useState(null);
   const [demoUrl, setDemoUrl] = useState(null);
 
   useLayoutEffect(() => {
@@ -618,6 +619,11 @@ export default function TemplateForm() {
                   <strong>Publish Changes</strong>, which snapshots <code>v{(currentVersion?.versionNumber || 0) + 1}</code>{' '}
                   and <strong>moves every invitation on this template</strong> to that version.
                 </div>
+                <div style={{ marginBottom: 10, color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                  You may delete a <strong>historical</strong> version only when <strong>no invitation</strong> is pinned to it
+                  (events pinned = 0). That removes its database row and deletes its folder from object storage (R2) or local disk.
+                  The <strong>current</strong> published version cannot be deleted here.
+                </div>
                 {versions.length > 0 && (
                   <div style={{ marginTop: 12 }}>
                     <div style={{ fontWeight: 600, marginBottom: 6 }}>All versions</div>
@@ -628,23 +634,59 @@ export default function TemplateForm() {
                           <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>Created</th>
                           <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>Events pinned</th>
                           <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)' }}>Status</th>
+                          <th style={{ padding: '4px 8px', borderBottom: '1px solid var(--border-subtle)', width: 1 }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {versions.map(v => (
+                        {versions.map(v => {
+                          const pinned = v.eventCount ?? v._count?.events ?? 0;
+                          const isCurrentRow = v.isCurrent || v.id === currentVersion?.id;
+                          const canDelete = !isCurrentRow && pinned === 0;
+                          return (
                           <tr key={v.id}>
                             <td style={{ padding: '4px 8px' }}>v{v.versionNumber}</td>
                             <td style={{ padding: '4px 8px', color: 'var(--text-secondary)' }}>
                               {v.createdAt ? new Date(v.createdAt).toLocaleString() : '—'}
                             </td>
-                            <td style={{ padding: '4px 8px' }}>{v.eventCount ?? v._count?.events ?? 0}</td>
+                            <td style={{ padding: '4px 8px' }}>{pinned}</td>
                             <td style={{ padding: '4px 8px' }}>
-                              {v.id === currentVersion.id
+                              {isCurrentRow
                                 ? <span style={{ color: 'var(--green)', fontWeight: 600 }}>current</span>
                                 : <span style={{ color: 'var(--text-secondary)' }}>historical</span>}
                             </td>
+                            <td style={{ padding: '4px 8px', whiteSpace: 'nowrap' }}>
+                              {canDelete ? (
+                                <Button
+                                  type="button"
+                                  variant="danger"
+                                  size="sm"
+                                  loading={versionDeletingId === v.id}
+                                  disabled={Boolean(versionDeletingId)}
+                                  onClick={async () => {
+                                    if (!window.confirm(
+                                      `Delete version v${v.versionNumber}?\n\nThis permanently removes its snapshot from the database and from storage (R2 or local). This cannot be undone.`
+                                    )) return;
+                                    setVersionDeletingId(v.id);
+                                    try {
+                                      const res = await api.templates.deleteVersion(id, v.id);
+                                      setVersions(Array.isArray(res.data?.versions) ? res.data.versions : []);
+                                      toast('Historical version deleted', 'success');
+                                    } catch (err) {
+                                      toast(err.message || 'Delete failed', 'error');
+                                    } finally {
+                                      setVersionDeletingId(null);
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              ) : (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>
+                              )}
+                            </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
