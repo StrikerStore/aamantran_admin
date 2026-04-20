@@ -822,7 +822,7 @@ export default function TemplateForm() {
             <div className="form-group">
               <label className="form-label">Upload ZIP {!isEdit && <span className="req">*</span>}{isEdit && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> (leave blank to keep existing)</span>}</label>
               <div className={`file-drop ${zipFile ? 'has-file' : ''}`} style={{ position: 'relative', paddingRight: zipFile ? 42 : undefined }} onClick={() => zipRef.current?.click()}>
-                {zipFile ? `✓ ${zipFile.name} (${(zipFile.size / 1024).toFixed(0)} KB)` : 'Click to upload ZIP (index.html, style.css, script.js, assets/)'}
+                {zipFile ? `✓ ${zipFile.name} (${(zipFile.size / 1024).toFixed(0)} KB)` : 'Click to upload ZIP (index.html, CSS, JS, assets/)'}
                 {zipFile && (
                   <button type="button" onClick={(e) => { e.stopPropagation(); setZipFile(null); if (zipRef.current) zipRef.current.value = ''; }}
                     style={{ position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', width: 24, height: 24, borderRadius: 999, border: '1px solid rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.95)', color: '#333', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
@@ -840,6 +840,13 @@ export default function TemplateForm() {
               )}
               <input ref={zipRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={e => setZipFile(e.target.files[0] || null)} />
             </div>
+            {isEdit && currentVersion && (
+              <p style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                Saving with a new ZIP updates the <strong>draft</strong> only (and the public demo).{' '}
+                <strong>Live invitation URLs</strong> keep the last published snapshot until you click{' '}
+                <strong>Publish Changes</strong> in the Versions section — that snapshots the draft and moves every invite on this template to the new version.
+              </p>
+            )}
           </div>
         </div>
 
