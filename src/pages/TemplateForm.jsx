@@ -544,8 +544,8 @@ export default function TemplateForm() {
     if (!ok) return;
     setSaving(true);
     try {
-      const res = await api.templates.publishChanges(id);
-      const updated = res?.data?.eventsUpdated;
+      const publishRes = await api.templates.publishChanges(id);
+      const updated = publishRes?.data?.eventsUpdated;
       toast(
         typeof updated === 'number'
           ? `Published v${nextNum} — ${updated} invitation(s) now on this version`
