@@ -7,6 +7,7 @@ import { formatCurrency } from '../lib/utils';
 import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES } from '../lib/constants';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
+import { toHtmlDateInputValue } from '../utils/dateNormalize';
 
 // ── Default function field config ────────────────────────────────────────────
 const DEFAULT_FUNCTION_FIELDS = {
@@ -949,8 +950,20 @@ export default function TemplateForm() {
                   <label className="form-label">Demo value (for preview)</label>
                   {cf.type === 'textarea' || cf.type === 'html' ? (
                     <textarea className="form-textarea" rows={2} value={cf.demoValue} onChange={e => updateCustomField(i, 'demoValue', e.target.value)} placeholder="Sample content..." />
+                  ) : cf.type === 'date' ? (
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={toHtmlDateInputValue(cf.demoValue || '')}
+                      onChange={(e) => updateCustomField(i, 'demoValue', e.target.value)}
+                    />
                   ) : (
                     <input className="form-input" value={cf.demoValue} onChange={e => updateCustomField(i, 'demoValue', e.target.value)} placeholder="Sample value..." />
+                  )}
+                  {cf.type === 'date' && (
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                      Stored and sent to the template as <code>YYYY-MM-DD</code> (ISO).
+                    </p>
                   )}
                 </div>
                 {cf.key && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>HTML variable: <code>{`{{${cf.key}}}`}</code></p>}
