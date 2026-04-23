@@ -25,7 +25,10 @@ const NAV = [
   },
   {
     section: 'Marketing',
-    items: [{ label: 'Coupons', to: '/coupons', icon: IconTag }],
+    items: [
+      { label: 'Coupons', to: '/coupons', icon: IconTag },
+      { label: 'Reviews', to: '/reviews', icon: IconStar },
+    ],
   },
   {
     section: 'Support',
@@ -201,6 +204,13 @@ function IconAsset() {
       <path d="M9 18V5l12-2v13"></path>
       <circle cx="6" cy="18" r="3"></circle>
       <circle cx="18" cy="16" r="3"></circle>
+    </svg>
+  );
+}
+function IconStar() {
+  return (
+    <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
     </svg>
   );
 }

@@ -15,6 +15,7 @@ import Coupons          from './pages/Coupons';
 import Tickets          from './pages/Tickets';
 import TicketDetail     from './pages/TicketDetail';
 import Assets           from './pages/Assets';
+import Reviews          from './pages/Reviews';
 
 function ProtectedRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/" replace />;
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="coupons"                element={<Coupons />} />
             <Route path="tickets"                element={<Tickets />} />
             <Route path="tickets/:id"            element={<TicketDetail />} />
+            <Route path="reviews"                element={<Reviews />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

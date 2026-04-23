@@ -139,6 +139,14 @@ export const api = {
     upload: (fd)   => request('POST', '/assets', { body: fd, multipart: true }),
     remove: (id)   => request('DELETE', `/assets/${id}`),
   },
+
+  reviews: {
+    list:   (params) => request('GET',    '/reviews', { params }),
+    create: (body)   => request('POST',   '/reviews', { body }),
+    hide:   (id)     => request('PATCH',  `/reviews/${id}/hide`),
+    show:   (id)     => request('PATCH',  `/reviews/${id}/show`),
+    remove: (id)     => request('DELETE', `/reviews/${id}`),
+  },
 };
 
 export { ApiError };
