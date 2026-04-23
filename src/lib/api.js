@@ -142,7 +142,7 @@ export const api = {
 
   reviews: {
     list:   (params) => request('GET',    '/reviews', { params }),
-    create: (body)   => request('POST',   '/reviews', { body }),
+    create: (fd)     => request('POST',   '/reviews', { body: fd, multipart: true }),
     hide:   (id)     => request('PATCH',  `/reviews/${id}/hide`),
     show:   (id)     => request('PATCH',  `/reviews/${id}/show`),
     remove: (id)     => request('DELETE', `/reviews/${id}`),

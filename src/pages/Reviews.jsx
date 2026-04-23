@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
@@ -10,23 +10,24 @@ function setTopbarTitle(t) {
 
 const STARS = [1, 2, 3, 4, 5];
 
+const BLANK_FORM = { templateId: '', rating: 5, coupleNames: '', location: '', reviewText: '' };
+
 export default function Reviews() {
   const toast = useToast();
 
-  const [loading, setLoading]       = useState(true);
-  const [reviews, setReviews]       = useState([]);
-  const [total, setTotal]           = useState(0);
+  const [loading, setLoading]           = useState(true);
+  const [reviews, setReviews]           = useState([]);
+  const [total, setTotal]               = useState(0);
   const [hiddenFilter, setHiddenFilter] = useState('');
 
-  // templates for dropdown
-  const [templates, setTemplates]   = useState([]);
+  const [templates, setTemplates] = useState([]);
 
-  // add-review form
-  const [showForm, setShowForm]     = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [form, setForm]             = useState({
-    templateId: '', rating: 5, coupleNames: '', location: '', reviewText: '', couplePhotoUrl: '',
-  });
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [form, setForm]         = useState(BLANK_FORM);
+  const [photoFile, setPhotoFile]       = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   useLayoutEffect(() => { setTopbarTitle('Reviews'); }, []);
 
@@ -52,6 +53,25 @@ export default function Reviews() {
       .then(r => setTemplates(r.data || []))
       .catch(() => {});
   }, []);
+
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0] || null;
+    setPhotoFile(file);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+  }
+
+  function clearPhoto() {
+    setPhotoFile(null);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function resetForm() {
+    setForm(BLANK_FORM);
+    clearPhoto();
+  }
 
   async function toggleVisibility(r) {
     try {
@@ -84,16 +104,17 @@ export default function Reviews() {
     if (!form.templateId) return toast('Please select a template', 'error');
     setSaving(true);
     try {
-      await api.reviews.create({
-        templateId:    form.templateId,
-        rating:        Number(form.rating),
-        coupleNames:   form.coupleNames || null,
-        location:      form.location || null,
-        reviewText:    form.reviewText || null,
-        couplePhotoUrl: form.couplePhotoUrl || null,
-      });
+      const fd = new FormData();
+      fd.append('templateId', form.templateId);
+      fd.append('rating', String(form.rating));
+      if (form.coupleNames) fd.append('coupleNames', form.coupleNames);
+      if (form.location)    fd.append('location',    form.location);
+      if (form.reviewText)  fd.append('reviewText',  form.reviewText);
+      if (photoFile)        fd.append('couplePhoto',  photoFile);
+
+      await api.reviews.create(fd);
       toast('Review added', 'success');
-      setForm({ templateId: '', rating: 5, coupleNames: '', location: '', reviewText: '', couplePhotoUrl: '' });
+      resetForm();
       setShowForm(false);
       load();
     } catch (err) {
@@ -125,7 +146,7 @@ export default function Reviews() {
             <option value="false">Visible only</option>
             <option value="true">Hidden only</option>
           </select>
-          <Button variant="primary" onClick={() => setShowForm(v => !v)}>
+          <Button variant="primary" onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}>
             {showForm ? 'Cancel' : '+ Add Review'}
           </Button>
         </div>
@@ -146,20 +167,68 @@ export default function Reviews() {
                   ))}
                 </select>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Rating *</label>
                 <select className="form-input" value={form.rating} onChange={field('rating')}>
                   {STARS.map(s => <option key={s} value={s}>{s} ★</option>)}
                 </select>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Couple Names</label>
                 <input className="form-input" placeholder="e.g. Priya & Arjun" value={form.coupleNames} onChange={field('coupleNames')} />
               </div>
+
               <div className="form-group">
                 <label className="form-label">Location</label>
                 <input className="form-input" placeholder="e.g. Mumbai" value={form.location} onChange={field('location')} />
               </div>
+
+              {/* Couple photo upload */}
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label className="form-label">Couple Photo (optional)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="preview"
+                      style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 56, height: 56, borderRadius: '50%',
+                      background: 'var(--surface-2, #f3f4f6)',
+                      border: '2px dashed var(--border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 22, color: 'var(--text-muted)',
+                    }}>👤</div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      style={{ display: 'none' }}
+                      onChange={handlePhotoChange}
+                    />
+                    <Button type="button" size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()}>
+                      {photoFile ? 'Change photo' : 'Upload photo'}
+                    </Button>
+                    {photoFile && (
+                      <Button type="button" size="sm" variant="ghost" onClick={clearPhoto}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  {photoFile && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {photoFile.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                 <label className="form-label">Review Text</label>
                 <textarea
@@ -171,10 +240,7 @@ export default function Reviews() {
                   style={{ resize: 'vertical' }}
                 />
               </div>
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">Couple Photo URL (optional)</label>
-                <input className="form-input" placeholder="https://…" value={form.couplePhotoUrl} onChange={field('couplePhotoUrl')} />
-              </div>
+
               <div className="form-group" style={{ display: 'flex', alignItems: 'end' }}>
                 <Button variant="primary" type="submit" loading={saving}>Save Review</Button>
               </div>
@@ -214,13 +280,22 @@ export default function Reviews() {
                   </td>
                   <td>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</td>
                   <td>
-                    <div>{r.coupleNames || '—'}</div>
-                    {r.location && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.location}</div>}
-                    {r.user && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        @{r.user.username}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {r.couplePhotoUrl && (
+                        <img
+                          src={r.couplePhotoUrl}
+                          alt=""
+                          style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                        />
+                      )}
+                      <div>
+                        <div>{r.coupleNames || '—'}</div>
+                        {r.location && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.location}</div>}
+                        {r.user && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>@{r.user.username}</div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </td>
                   <td style={{ maxWidth: 280 }}>
                     <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -229,9 +304,7 @@ export default function Reviews() {
                   </td>
                   <td>
                     <span style={{
-                      fontSize: '0.75rem',
-                      padding: '2px 8px',
-                      borderRadius: 99,
+                      fontSize: '0.75rem', padding: '2px 8px', borderRadius: 99,
                       background: r.isAdminCreated ? 'var(--accent-light, #e8f4fd)' : 'var(--surface-2, #f5f5f5)',
                       color: r.isAdminCreated ? 'var(--accent, #2563eb)' : 'var(--text-muted)',
                     }}>
@@ -240,9 +313,7 @@ export default function Reviews() {
                   </td>
                   <td>
                     <span style={{
-                      fontSize: '0.75rem',
-                      padding: '2px 8px',
-                      borderRadius: 99,
+                      fontSize: '0.75rem', padding: '2px 8px', borderRadius: 99,
                       background: r.isHidden ? '#fef2f2' : '#f0fdf4',
                       color: r.isHidden ? '#b91c1c' : '#15803d',
                     }}>
