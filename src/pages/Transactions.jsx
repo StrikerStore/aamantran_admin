@@ -70,6 +70,7 @@ export default function Transactions() {
           <table>
             <thead>
               <tr>
+                <th>Order ID</th>
                 <th>User</th>
                 <th>Template</th>
                 <th>Invitation</th>
@@ -81,6 +82,9 @@ export default function Transactions() {
             <tbody>
               {txs.map(tx => (
                 <tr key={tx.id} className="clickable" onClick={() => navigate(`/transactions/${tx.id}`)}>
+                  <td>
+                    <span style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{tx.orderId || '—'}</span>
+                  </td>
                   <td>
                     <div className="td-primary">{tx.user?.username || '—'}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{tx.user?.email}</div>

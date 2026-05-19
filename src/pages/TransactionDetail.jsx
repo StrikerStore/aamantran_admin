@@ -85,6 +85,7 @@ export default function TransactionDetail() {
             <div className="card-body">
               <table className="kv-table">
                 <tbody>
+                  <tr><td>Order ID</td><td><span className="mono">{tx.orderId || '—'}</span></td></tr>
                   <tr><td>Status</td><td><Badge status={tx.status} /></td></tr>
                   <tr><td>Amount</td><td className="td-primary">{formatCurrency(tx.amount)}</td></tr>
                   <tr><td>Currency</td><td>{tx.currency}</td></tr>
