@@ -5,49 +5,79 @@
 :root {
   color-scheme: light;
 
-  /* Backgrounds */
-  --bg-base:     #f5f3ef;
+  /* Backgrounds — pale lavender wash, white clay surfaces */
+  --bg-base:     #f2effc;
   --bg-surface:  #ffffff;
-  --bg-elevated: #f0ede8;
-  --bg-overlay:  #e8e4dc;
+  --bg-elevated: #f6f3fd;
+  --bg-overlay:  #e8e2f7;
 
-  /* Brand */
-  --gold:        #b8912e;
-  --gold-light:  #c9a84c;
-  --red:         #c94030;
-  --green:       #2a9e68;
-  --blue:        #2f7fd4;
+  /* Brand (names kept; --gold is now the lavender primary) */
+  --gold:        #6c5ce7;
+  --gold-light:  #8b7cf0;
+  --red:         #d1495b;
+  --green:       #1f8a5d;
+  --blue:        #3670bd;
 
-  /* Text */
-  --text-primary:   #1c1a18;
-  --text-secondary: #4a4760;
-  --text-muted:     #9490a4;
+  /* Pastel families: -soft = chip/panel bg, mid = accents/borders, -deep = text on soft */
+  --lav-soft:   #ece7fc;  --lav:   #b3a5f2;  --lav-deep:   #5a4bbf;
+  --mint-soft:  #dcf5e8;  --mint:  #8fdcba;  --mint-deep:  #1f8a5d;
+  --peach-soft: #ffe9da;  --peach: #ffbd94;  --peach-deep: #a34e1f;
+  --sky-soft:   #ddeefb;  --sky:   #93cdf2;  --sky-deep:   #2a6a9e;
+  --lemon-soft: #fdf3cf;  --lemon: #f2d868;  --lemon-deep: #8a6a0a;
+  --rose-soft:  #fce3ec;  --rose:  #f5a8c5;  --rose-deep:  #b23a64;
 
-  /* Borders */
-  --border-subtle:  rgba(0,0,0,0.07);
-  --border-default: rgba(0,0,0,0.13);
-  --border-strong:  rgba(0,0,0,0.22);
-  --border-gold:    rgba(184,145,46,0.4);
+  /* Aliases used by Reviews.jsx */
+  --surface-2:    var(--bg-elevated);
+  --accent:       var(--gold);
+  --accent-light: var(--lav-soft);
+
+  /* Text — indigo-tinted */
+  --text-primary:   #2d2a4a;
+  --text-secondary: #55507c;
+  --text-muted:     #9b95bd;
+
+  /* Borders — lavender-tinted, lighter (clay leans on shadow, not border) */
+  --border-subtle:  rgba(108,92,231,0.08);
+  --border-default: rgba(108,92,231,0.16);
+  --border-strong:  rgba(108,92,231,0.30);
+  --border-gold:    rgba(108,92,231,0.40);
 
   /* Sidebar */
   --sidebar-w: 240px;
   --sidebar-bg: #ffffff;
 
-  /* Radius */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 16px;
-  --r-xl: 24px;
+  /* Radius — clay = very rounded */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
 
   /* Transitions */
   --t-fast: 140ms cubic-bezier(0.4,0,0.2,1);
   --t-base: 220ms cubic-bezier(0.4,0,0.2,1);
 
-  /* Shadows */
-  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md:   0 4px 16px rgba(0,0,0,0.10);
-  --shadow-lg:   0 8px 32px rgba(0,0,0,0.14);
-  --shadow-gold: 0 0 0 1px rgba(184,145,46,0.25), 0 4px 20px rgba(184,145,46,0.10);
+  /* Clay shadows: soft outer + light top-left inset + dark bottom-right inset */
+  --shadow-sm: 0 4px 10px rgba(108,92,231,0.10),
+               inset 1px 1px 2px rgba(255,255,255,0.90),
+               inset -2px -2px 4px rgba(108,92,231,0.06);
+  --shadow-md: 0 8px 20px rgba(108,92,231,0.14),
+               inset 2px 2px 4px rgba(255,255,255,0.85),
+               inset -3px -3px 6px rgba(108,92,231,0.08);
+  --shadow-lg: 0 16px 36px rgba(108,92,231,0.18),
+               inset 2px 2px 5px rgba(255,255,255,0.90),
+               inset -4px -4px 8px rgba(108,92,231,0.10);
+  --shadow-clay-sm: var(--shadow-sm);
+  --shadow-clay-md: var(--shadow-md);
+  --shadow-clay-lg: var(--shadow-lg);
+  --shadow-press: inset 3px 3px 7px rgba(108,92,231,0.20),
+                  inset -1px -1px 2px rgba(255,255,255,0.70);
+  --shadow-gold: 0 0 0 2px rgba(108,92,231,0.18), 0 8px 24px rgba(108,92,231,0.16);
+  --focus-ring: 0 0 0 3px rgba(108,92,231,0.18);
+
+  /* Fonts */
+  --font-display: 'Baloo 2', 'Nunito', sans-serif;
+  --font-body:    'Nunito', sans-serif;
+  --font-mono:    'DM Mono', monospace;
 }
 
 /* ── Reset ── */
@@ -60,7 +90,7 @@ html {
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body);
   background: var(--bg-base);
   color: var(--text-primary);
   line-height: 1.6;
@@ -104,7 +134,7 @@ input, select, textarea { font-family: inherit; }
 
 /* ── Mono ── */
 code, .mono {
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
   background: var(--bg-elevated);
   padding: 2px 6px;

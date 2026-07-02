@@ -33,8 +33,9 @@
 .page-btn.active {
   background: var(--gold);
   border-color: var(--gold);
-  color: var(--bg-base);
+  color: #fff;
   font-weight: 700;
+  box-shadow: var(--shadow-clay-sm);
 }
 
 .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }

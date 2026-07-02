@@ -415,7 +415,7 @@ function PairedInvitesBlock({ userId, full, subset, onEdit, onFreeze, toast, onR
           Same template and couple; <strong>two separate guest URLs</strong> — one lists every function you added, the other only the ones marked for the partial invite.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-          <span style={{ fontSize: '0.72rem', color: 'var(--gold)', background: 'rgba(184,145,46,0.12)', padding: '4px 10px', borderRadius: 6, fontWeight: 600 }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--lav-deep)', background: 'var(--lav-soft)', padding: '4px 10px', borderRadius: 10, fontWeight: 600 }}>
             Full + partial pair
           </span>
           {namesFrozen && (
@@ -633,7 +633,7 @@ function EventCard({ userId, event: ev, subtitle, onEdit, onSwap, onFreeze, toas
               <span style={{ marginLeft: 8, fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--bg-overlay)', padding: '2px 8px', borderRadius: 4 }}>Names frozen</span>
             )}
             {subtitle && (
-              <span style={{ marginLeft: 8, fontSize: '0.7rem', color: 'var(--gold)', background: 'rgba(184,145,46,0.12)', padding: '2px 8px', borderRadius: 4 }}>{subtitle}</span>
+              <span style={{ marginLeft: 8, fontSize: '0.7rem', color: 'var(--lav-deep)', background: 'var(--lav-soft)', padding: '2px 8px', borderRadius: 8 }}>{subtitle}</span>
             )}
             {!subtitle && ev.inviteScope === 'full' && (
               <span style={{ marginLeft: 8, fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--bg-overlay)', padding: '2px 8px', borderRadius: 4 }}>All functions</span>

@@ -314,8 +314,8 @@ export default function Reviews() {
                   <td>
                     <span style={{
                       fontSize: '0.75rem', padding: '2px 8px', borderRadius: 99,
-                      background: r.isHidden ? '#fef2f2' : '#f0fdf4',
-                      color: r.isHidden ? '#b91c1c' : '#15803d',
+                      background: r.isHidden ? 'var(--rose-soft)' : 'var(--mint-soft)',
+                      color: r.isHidden ? 'var(--rose-deep)' : 'var(--mint-deep)',
                     }}>
                       {r.isHidden ? 'Hidden' : 'Visible'}
                     </span>

@@ -1,7 +1,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.72);
+  background: rgba(45,42,74,0.45);
   backdrop-filter: blur(4px);
   z-index: 200;
   display: flex;
@@ -13,9 +13,9 @@
 
 .modal {
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  border: none;
   border-radius: var(--r-xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-clay-lg);
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
@@ -35,9 +35,9 @@
 }
 
 .modal-title {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-display);
   font-size: 1.2rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -53,7 +53,7 @@
   font-size: 0.9rem;
 }
 
-.modal-close:hover { border-color: var(--red); color: var(--red); }
+.modal-close:hover { border-color: var(--rose); color: var(--rose-deep); background: var(--rose-soft); }
 
 .modal-body { padding: 0 24px 24px; }
 

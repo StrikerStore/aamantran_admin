@@ -50,10 +50,10 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="stats-grid">
-        <StatCard label="Total Templates" value={stats?.templates ?? '—'} accent="var(--gold)" />
-        <StatCard label="Registered Users" value={stats?.users ?? '—'} accent="var(--blue)" />
-        <StatCard label="Paid Transactions" value={stats?.totalPaid ?? '—'} accent="var(--green)" />
-        <StatCard label="Open Tickets" value={stats?.openTickets ?? '—'} accent="var(--red)" />
+        <StatCard label="Total Templates" value={stats?.templates ?? '—'} accent="var(--lav)" />
+        <StatCard label="Registered Users" value={stats?.users ?? '—'} accent="var(--sky)" />
+        <StatCard label="Paid Transactions" value={stats?.totalPaid ?? '—'} accent="var(--mint)" />
+        <StatCard label="Open Tickets" value={stats?.openTickets ?? '—'} accent="var(--rose)" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>

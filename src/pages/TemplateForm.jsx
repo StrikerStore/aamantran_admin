@@ -739,7 +739,7 @@ export default function TemplateForm() {
                           setDesktopThumbPreview(null);
                         }} />
                       <button type="button" onClick={handleDeleteDesktopThumb}
-                        style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 999, border: '1px solid rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.92)', color: '#333', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
+                        style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 999, border: '1px solid var(--border-default)', background: 'rgba(255,255,255,0.92)', color: 'var(--text-primary)', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
                     </>
                   ) : (
                     <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', padding: 10 }}><div style={{ fontSize: '1.5rem', marginBottom: 6 }}>🖥️</div>Click to upload</div>
@@ -760,7 +760,7 @@ export default function TemplateForm() {
                           setMobileThumbPreview(null);
                         }} />
                       <button type="button" onClick={handleDeleteMobileThumb}
-                        style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 999, border: '1px solid rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.92)', color: '#333', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
+                        style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 999, border: '1px solid var(--border-default)', background: 'rgba(255,255,255,0.92)', color: 'var(--text-primary)', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
                     </>
                   ) : (
                     <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', padding: 10 }}><div style={{ fontSize: '1.5rem', marginBottom: 6 }}>📱</div>Click to upload</div>
@@ -822,7 +822,7 @@ export default function TemplateForm() {
                       {group.items.map(item => {
                         const active = bestFor.includes(item.id);
                         return (
-                          <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', border: `1px solid ${active ? 'var(--gold)' : 'var(--border-default)'}`, borderRadius: 'var(--r-sm)', background: active ? 'rgba(184,145,46,0.10)' : 'var(--bg-surface)', cursor: 'pointer', fontSize: '0.84rem', color: active ? 'var(--gold)' : 'var(--text-secondary)', userSelect: 'none' }}>
+                          <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', border: `1px solid ${active ? 'var(--gold)' : 'var(--border-default)'}`, borderRadius: 'var(--r-sm)', background: active ? 'var(--lav-soft)' : 'var(--bg-surface)', cursor: 'pointer', fontSize: '0.84rem', color: active ? 'var(--gold)' : 'var(--text-secondary)', userSelect: 'none' }}>
                             <input type="checkbox" style={{ display: 'none' }} checked={active} onChange={() => toggleBestFor(item.id)} />
                             {active && <span style={{ fontSize: '0.7rem' }}>✓</span>}
                             {item.label}
@@ -838,7 +838,7 @@ export default function TemplateForm() {
               <label className="form-label">Languages Supported <span className="req">*</span></label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
                 {LANGUAGES.map(({ code, label }) => (
-                  <label key={code} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', border: `1px solid ${languages.includes(code) ? 'var(--blue)' : 'var(--border-default)'}`, borderRadius: 'var(--r-sm)', background: languages.includes(code) ? 'rgba(47,127,212,0.08)' : 'var(--bg-elevated)', cursor: 'pointer', fontSize: '0.84rem', color: languages.includes(code) ? 'var(--blue)' : 'var(--text-secondary)' }}>
+                  <label key={code} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', border: `1px solid ${languages.includes(code) ? 'var(--blue)' : 'var(--border-default)'}`, borderRadius: 'var(--r-sm)', background: languages.includes(code) ? 'var(--sky-soft)' : 'var(--bg-elevated)', cursor: 'pointer', fontSize: '0.84rem', color: languages.includes(code) ? 'var(--blue)' : 'var(--text-secondary)' }}>
                     <input type="checkbox" style={{ display: 'none' }} checked={languages.includes(code)} onChange={() => toggleLanguage(code)} />
                     {label}
                   </label>
@@ -868,7 +868,7 @@ export default function TemplateForm() {
                 {zipFile ? `✓ ${zipFile.name} (${(zipFile.size / 1024).toFixed(0)} KB)` : 'Click to upload ZIP (index.html, CSS, JS, assets/)'}
                 {zipFile && (
                   <button type="button" onClick={(e) => { e.stopPropagation(); setZipFile(null); if (zipRef.current) zipRef.current.value = ''; }}
-                    style={{ position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', width: 24, height: 24, borderRadius: 999, border: '1px solid rgba(0,0,0,0.18)', background: 'rgba(255,255,255,0.95)', color: '#333', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
+                    style={{ position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', width: 24, height: 24, borderRadius: 999, border: '1px solid var(--border-default)', background: 'rgba(255,255,255,0.95)', color: 'var(--text-primary)', fontSize: 16, lineHeight: '20px', cursor: 'pointer' }}>×</button>
                 )}
               </div>
               {isEdit && !zipFile && existingZipMeta && (

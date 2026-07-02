@@ -94,7 +94,7 @@ export default function Login() {
             style={{ display: 'block', margin: '0 auto 12px', objectFit: 'contain' }}
           />
           <div style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "'Baloo 2', 'Nunito', sans-serif",
             fontSize: '1.8rem',
             fontWeight: 600,
             color: 'var(--gold)',
@@ -216,8 +216,8 @@ export default function Login() {
                 marginBottom: 20,
                 padding: '10px 14px',
                 borderRadius: 'var(--r-sm)',
-                background: 'rgba(220,53,69,0.08)',
-                border: '1px solid rgba(220,53,69,0.3)',
+                background: 'var(--rose-soft)',
+                border: '1px solid var(--rose)',
                 color: 'var(--red)',
                 fontSize: '0.84rem',
                 display: 'flex',

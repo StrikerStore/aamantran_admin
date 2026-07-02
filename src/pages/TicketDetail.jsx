@@ -203,8 +203,8 @@ function MessageBubble({ msg }) {
     }}>
       <div style={{
         maxWidth: '72%',
-        background: isAdmin ? 'rgba(201,168,76,0.12)' : 'var(--bg-elevated)',
-        border: `1px solid ${isAdmin ? 'rgba(201,168,76,0.3)' : 'var(--border-subtle)'}`,
+        background: isAdmin ? 'var(--lav-soft)' : 'var(--bg-elevated)',
+        border: `1px solid ${isAdmin ? 'var(--lav)' : 'var(--border-subtle)'}`,
         borderRadius: isAdmin ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
         padding: '12px 16px',
       }}>

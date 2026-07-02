@@ -14,10 +14,10 @@
   align-items: center;
   gap: 10px;
   padding: 12px 20px;
-  border-radius: 10px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-default);
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+  border: none;
+  box-shadow: var(--shadow-clay-lg);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
@@ -26,9 +26,9 @@
   pointer-events: all;
 }
 
-.toast-success { border-left: 3px solid var(--green); }
-.toast-error   { border-left: 3px solid var(--red); }
-.toast-info    { border-left: 3px solid var(--blue); }
-.toast-warning { border-left: 3px solid var(--gold); }
+.toast-success { border-left: 4px solid var(--mint); }
+.toast-error   { border-left: 4px solid var(--rose); }
+.toast-info    { border-left: 4px solid var(--sky); }
+.toast-warning { border-left: 4px solid var(--lemon); }
 
 .toast-icon { font-size: 1rem; flex-shrink: 0; }

@@ -10,25 +10,35 @@ import { ConfirmModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import { Pagination } from '../components/ui/Pagination';
 
-// Colour map for event category chips
+// Colour map for event category chips — pastel token triples (-soft bg, mid border, -deep text)
+const PASTEL = {
+  lav:     { bg: 'var(--lav-soft)',    border: 'var(--lav)',            color: 'var(--lav-deep)' },
+  mint:    { bg: 'var(--mint-soft)',   border: 'var(--mint)',           color: 'var(--mint-deep)' },
+  peach:   { bg: 'var(--peach-soft)',  border: 'var(--peach)',          color: 'var(--peach-deep)' },
+  sky:     { bg: 'var(--sky-soft)',    border: 'var(--sky)',            color: 'var(--sky-deep)' },
+  lemon:   { bg: 'var(--lemon-soft)',  border: 'var(--lemon)',          color: 'var(--lemon-deep)' },
+  rose:    { bg: 'var(--rose-soft)',   border: 'var(--rose)',           color: 'var(--rose-deep)' },
+  neutral: { bg: 'var(--bg-overlay)',  border: 'var(--border-default)', color: 'var(--text-secondary)' },
+};
+
 const CATEGORY_COLORS = {
-  'Wedding':         { bg: 'rgba(184,145,46,0.10)',  border: 'rgba(184,145,46,0.35)',  color: '#9a7020' },
-  'Engagement':      { bg: 'rgba(184,145,46,0.10)',  border: 'rgba(184,145,46,0.35)',  color: '#9a7020' },
-  'Reception':       { bg: 'rgba(184,145,46,0.10)',  border: 'rgba(184,145,46,0.35)',  color: '#9a7020' },
-  'Sangeet':         { bg: 'rgba(184,145,46,0.10)',  border: 'rgba(184,145,46,0.35)',  color: '#9a7020' },
-  'Haldi':           { bg: 'rgba(230,180,0,0.12)',   border: 'rgba(230,180,0,0.35)',   color: '#8a6600' },
-  'Mehendi':         { bg: 'rgba(80,140,60,0.10)',   border: 'rgba(80,140,60,0.35)',   color: '#3a7020' },
-  'Nikah':           { bg: 'rgba(20,140,120,0.10)',  border: 'rgba(20,140,120,0.35)',  color: '#0a7060' },
-  'Anand Karaj':     { bg: 'rgba(220,140,20,0.10)',  border: 'rgba(220,140,20,0.35)',  color: '#8a5500' },
-  'Thread Ceremony': { bg: 'rgba(120,80,200,0.10)',  border: 'rgba(120,80,200,0.35)',  color: '#6040a0' },
-  'Naming Ceremony': { bg: 'rgba(60,120,220,0.10)',  border: 'rgba(60,120,220,0.35)',  color: '#2060a0' },
-  'Griha Pravesh':   { bg: 'rgba(200,80,60,0.10)',   border: 'rgba(200,80,60,0.35)',   color: '#903020' },
-  'Birthday':        { bg: 'rgba(220,80,160,0.10)',  border: 'rgba(220,80,160,0.35)',  color: '#a03070' },
-  'First Birthday':  { bg: 'rgba(220,80,160,0.12)',  border: 'rgba(220,80,160,0.4)',   color: '#a03070' },
-  'Baby Shower':     { bg: 'rgba(80,160,220,0.10)',  border: 'rgba(80,160,220,0.35)',  color: '#2070a0' },
-  'House Warming':   { bg: 'rgba(200,120,60,0.10)',  border: 'rgba(200,120,60,0.35)',  color: '#904020' },
-  'Anniversary':     { bg: 'rgba(180,60,100,0.10)',  border: 'rgba(180,60,100,0.35)',  color: '#802040' },
-  'Retirement':      { bg: 'rgba(100,100,120,0.10)', border: 'rgba(100,100,120,0.35)', color: '#404060' },
+  'Wedding':         PASTEL.lav,
+  'Engagement':      PASTEL.lav,
+  'Reception':       PASTEL.lav,
+  'Sangeet':         PASTEL.lav,
+  'Haldi':           PASTEL.lemon,
+  'Mehendi':         PASTEL.mint,
+  'Nikah':           PASTEL.mint,
+  'Anand Karaj':     PASTEL.peach,
+  'Thread Ceremony': PASTEL.lav,
+  'Naming Ceremony': PASTEL.sky,
+  'Griha Pravesh':   PASTEL.peach,
+  'Birthday':        PASTEL.rose,
+  'First Birthday':  PASTEL.rose,
+  'Baby Shower':     PASTEL.sky,
+  'House Warming':   PASTEL.peach,
+  'Anniversary':     PASTEL.rose,
+  'Retirement':      PASTEL.neutral,
 };
 
 function setTopbarTitle(t) {
