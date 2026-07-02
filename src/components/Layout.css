@@ -331,7 +331,8 @@
 
 /* ── Card ── */
 .card {
-  background: var(--bg-surface);
+  /* Subtle diagonal gradient sells the curved-clay surface */
+  background: linear-gradient(145deg, #ffffff 55%, var(--bg-elevated) 100%);
   border: none;
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-clay-md);
@@ -358,7 +359,7 @@
 }
 
 .stat-card {
-  background: var(--bg-surface);
+  background: linear-gradient(145deg, #ffffff 55%, var(--bg-elevated) 100%);
   border: none;
   border-radius: var(--r-lg);
   padding: 20px 24px;
@@ -380,6 +381,7 @@
 }
 
 .stat-value {
+  font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -461,10 +463,13 @@ tbody tr.clickable { cursor: pointer; }
   color: var(--text-primary);
   font-size: 0.875rem;
   outline: none;
+  /* Pressed-into-the-clay look */
+  box-shadow: inset 2px 2px 5px rgba(108,92,231,0.08),
+              inset -2px -2px 4px rgba(255,255,255,0.90);
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 
-.search-input:focus { border-color: var(--gold); box-shadow: var(--focus-ring); }
+.search-input:focus { border-color: var(--gold); box-shadow: var(--focus-ring), inset 2px 2px 5px rgba(108,92,231,0.08); }
 .search-input::placeholder { color: var(--text-muted); }
 
 .filter-select {
@@ -511,6 +516,9 @@ tbody tr.clickable { cursor: pointer; }
   color: var(--text-primary);
   font-size: 0.9rem;
   outline: none;
+  /* Pressed-into-the-clay look */
+  box-shadow: inset 2px 2px 5px rgba(108,92,231,0.08),
+              inset -2px -2px 4px rgba(255,255,255,0.90);
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 
@@ -518,7 +526,7 @@ tbody tr.clickable { cursor: pointer; }
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--gold);
-  box-shadow: var(--focus-ring);
+  box-shadow: var(--focus-ring), inset 2px 2px 5px rgba(108,92,231,0.08);
 }
 
 .form-input::placeholder,
@@ -554,6 +562,7 @@ tbody tr.clickable { cursor: pointer; }
   border-radius: 11px;
   border: 1px solid var(--border-default);
   cursor: pointer;
+  box-shadow: inset 2px 2px 4px rgba(108,92,231,0.12);
   transition: background var(--t-fast);
 }
 

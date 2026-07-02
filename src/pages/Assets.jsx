@@ -81,8 +81,8 @@ export default function Assets() {
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 24 }}>
-        <h3 style={{ marginBottom: 16 }}>Upload New Asset</h3>
+      <div className="card" style={{ marginBottom: 24, padding: 24 }}>
+        <h3 className="card-title" style={{ marginBottom: 16 }}>Upload New Asset</h3>
         <form onSubmit={handleUpload} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div className="form-group" style={{ flex: 1, minWidth: 200, margin: 0 }}>
             <label className="form-label">Asset Name</label>
@@ -121,7 +121,7 @@ export default function Assets() {
         </form>
       </div>
 
-      <div className="table-responsive">
+      <div className="table-container">
         <table className="table">
           <thead>
             <tr>

@@ -8,6 +8,9 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  /* Puffy clay chip: light top-left, faint dark bottom-right */
+  box-shadow: inset 1px 1px 2px rgba(255,255,255,0.85),
+              inset -1px -1px 2px rgba(0,0,0,0.05);
 }
 
 .badge::before {
@@ -26,3 +29,4 @@
 .badge-refunded { background: var(--sky-soft);   color: var(--sky-deep); }
 .badge-open     { background: var(--lemon-soft); color: var(--lemon-deep); }
 .badge-resolved { background: var(--mint-soft);  color: var(--mint-deep); }
+.badge-gray     { background: var(--bg-overlay); color: var(--text-secondary); }
