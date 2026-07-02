@@ -89,7 +89,7 @@
 
 .nav-item.active {
   background: var(--lav-soft);
-  color: var(--gold);
+  color: var(--lav-deep);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-clay-sm);
 }
@@ -100,8 +100,16 @@
   left: 0; top: 25%; bottom: 25%;
   width: 3px;
   border-radius: 0 2px 2px 0;
-  background: var(--gold);
+  background: var(--lav);
 }
+
+/* Playful pastel cycle: each item in a section gets its own hue when active */
+a.nav-item:nth-of-type(4n+2).active { background: var(--sky-soft);   color: var(--sky-deep); }
+a.nav-item:nth-of-type(4n+2).active::before { background: var(--sky); }
+a.nav-item:nth-of-type(4n+3).active { background: var(--mint-soft);  color: var(--mint-deep); }
+a.nav-item:nth-of-type(4n+3).active::before { background: var(--mint); }
+a.nav-item:nth-of-type(4n+4).active { background: var(--peach-soft); color: var(--peach-deep); }
+a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
 
 .nav-icon {
   width: 18px; height: 18px;
@@ -204,6 +212,15 @@
   top: 0;
   z-index: 50;
   box-shadow: 0 2px 12px rgba(108,92,231,0.07);
+}
+
+/* Four-pastel signature strip along the very top */
+.topbar::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--lav), var(--sky), var(--mint), var(--peach));
 }
 
 .topbar-brand {
@@ -347,7 +364,14 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.card-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+.card-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); display: inline-flex; align-items: center; gap: 8px; }
+.card-title::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--peach);
+  flex-shrink: 0;
+}
 .card-body  { padding: 24px; }
 
 /* ── Stat Card ── */
@@ -473,23 +497,25 @@ tbody tr.clickable { cursor: pointer; }
 .search-input::placeholder { color: var(--text-muted); }
 
 .filter-select {
-  padding: 9px 36px 9px 14px;
+  padding: 9px 36px 9px 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   color: var(--text-secondary);
   font-size: 0.875rem;
   outline: none;
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5d72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c5ce7' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  transition: border-color var(--t-fast);
+  background-position: right 12px center;
+  box-shadow: inset 2px 2px 5px rgba(108,92,231,0.08),
+              inset -2px -2px 4px rgba(255,255,255,0.90);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 
-.filter-select:focus { border-color: var(--gold); }
-.filter-select option { background: var(--bg-elevated); color: var(--text-primary); }
+.filter-select:focus { border-color: var(--gold); box-shadow: var(--focus-ring), inset 2px 2px 5px rgba(108,92,231,0.08); }
+.filter-select option { background: var(--bg-surface); color: var(--text-primary); }
 
 /* ── Form ── */
 .form-group { margin-bottom: 20px; }
@@ -536,14 +562,15 @@ tbody tr.clickable { cursor: pointer; }
 
 .form-select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5d72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c5ce7' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
+  border-radius: var(--r-md);
   padding-right: 36px;
   cursor: pointer;
 }
 
-.form-select option { background: var(--bg-elevated); color: var(--text-primary); }
+.form-select option { background: var(--bg-surface); color: var(--text-primary); }
 .form-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
