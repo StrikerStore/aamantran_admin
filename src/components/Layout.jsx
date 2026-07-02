@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { clearToken, getAdminInfo } from '../lib/auth';
 import { api } from '../lib/api';
 import './Layout.css';
@@ -40,6 +40,7 @@ export function Layout() {
   const navigate = useNavigate();
   const info = getAdminInfo();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('aam_admin_sidebar') === 'collapsed');
   const [ticketCount, setTicketCount] = useState(0);
 
   useEffect(() => {
@@ -53,11 +54,23 @@ export function Layout() {
     navigate('/');
   }
 
+  // One button, two behaviors: slides the drawer on mobile, collapses to an icon rail on desktop
+  function toggleSidebar() {
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      setSidebarOpen(o => !o);
+    } else {
+      setCollapsed(c => {
+        localStorage.setItem('aam_admin_sidebar', c ? 'expanded' : 'collapsed');
+        return !c;
+      });
+    }
+  }
+
   const initial = (info?.email?.[0] || 'A').toUpperCase();
   const username = info?.email?.split('@')[0] || 'Admin';
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${collapsed ? ' collapsed' : ''}`}>
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar">
         <div className="sidebar-logo">
@@ -78,6 +91,7 @@ export function Layout() {
                   to={item.to}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   onClick={() => setSidebarOpen(false)}
+                  title={item.label}
                 >
                   <item.icon />
                   <span>{item.label}</span>
@@ -114,15 +128,11 @@ export function Layout() {
         <header className="topbar">
           <button
             className="sidebar-toggle"
-            onClick={() => setSidebarOpen(o => !o)}
+            onClick={toggleSidebar}
             aria-label="Toggle sidebar"
           >
             <IconMenu />
           </button>
-          <Link to="/dashboard" className="topbar-brand">
-            <img src="/logo.png" alt="" className="topbar-brand-logo" width="32" height="32" decoding="async" />
-            <span className="topbar-brand-name">Aamantran</span>
-          </Link>
           <div id="topbar-title-slot" className="topbar-title" />
           <div className="topbar-actions" id="topbar-actions-slot" />
         </header>
