@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import { isAuthenticated } from './lib/auth';
 import { Layout } from './components/Layout';
@@ -18,7 +18,11 @@ import Assets           from './pages/Assets';
 import Reviews          from './pages/Reviews';
 
 function ProtectedRoute({ children }) {
-  return isAuthenticated() ? children : <Navigate to="/" replace />;
+  const location = useLocation();
+  if (isAuthenticated()) return children;
+  // Preserve the page the admin was heading to so login can return there.
+  const next = location.pathname + location.search;
+  return <Navigate to={next && next !== '/' ? `/?next=${encodeURIComponent(next)}` : '/'} replace />;
 }
 
 export default function App() {

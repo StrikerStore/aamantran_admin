@@ -61,7 +61,10 @@ async function request(method, path, { body, multipart = false, params } = {}) {
     // Only hard-redirect when a session was active (e.g. expired token mid-session).
     // On the login page itself there is no token yet, so just throw and let the
     // form's catch block display the error inline.
-    if (hadToken) window.location.href = '/';
+    if (hadToken) {
+      const next = window.location.pathname + window.location.search;
+      window.location.href = next && next !== '/' ? `/?next=${encodeURIComponent(next)}` : '/';
+    }
     throw new ApiError(msg, 401, json);
   }
 
@@ -71,8 +74,8 @@ async function request(method, path, { body, multipart = false, params } = {}) {
 
 export const api = {
   auth: {
-    login: (email, password) =>
-      request('POST', '/auth/login', { body: { email, password } }),
+    login: (email, password, otp) =>
+      request('POST', '/auth/login', { body: { email, password, ...(otp ? { otp } : {}) } }),
   },
 
   templates: {
