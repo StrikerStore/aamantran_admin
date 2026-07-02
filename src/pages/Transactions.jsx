@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Pagination } from '../components/ui/Pagination';
@@ -49,13 +50,13 @@ export default function Transactions() {
 
       {/* Filters */}
       <div className="filters-bar">
-        <select className="filter-select" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
+        <Select className="filter-select" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
           <option value="">All status</option>
           <option value="pending">Pending</option>
           <option value="paid">Paid</option>
           <option value="failed">Failed</option>
           <option value="refunded">Refunded</option>
-        </select>
+        </Select>
       </div>
 
       <div className="table-container">

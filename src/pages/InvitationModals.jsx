@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { computeFunctionSortOrders, resolveMapFieldsForRow, formatLatLngHint } from '../lib/functionFormHelpers';
 import { formatCurrency } from '../lib/utils';
 import { Button } from '../components/ui/Button';
@@ -344,18 +345,18 @@ export function AdminInviteModal({ userId, user, onClose, onSuccess }) {
       </p>
       {has ? (
         <div className="form-group"><label className="form-label">Purchase (template source)</label>
-          <select className="form-select" value={paymentId} onChange={e => setPaymentId(e.target.value)}>{payments.map(p => <option key={p.id} value={p.id}>{p.template?.name || 'Template'} — {formatCurrency(p.amount)} — {p.status}</option>)}</select></div>
+          <Select className="form-select" value={paymentId} onChange={e => setPaymentId(e.target.value)}>{payments.map(p => <option key={p.id} value={p.id}>{p.template?.name || 'Template'} — {formatCurrency(p.amount)} — {p.status}</option>)}</Select></div>
       ) : (
         <div className="form-group"><label className="form-label">Template</label>
-          <select className="form-select" value={templateId} onChange={e => setTplId(e.target.value)}>{templates.map(t => <option key={t.id} value={t.id}>{t.name} — {t.community}</option>)}</select>
+          <Select className="form-select" value={templateId} onChange={e => setTplId(e.target.value)}>{templates.map(t => <option key={t.id} value={t.id}>{t.name} — {t.community}</option>)}</Select>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>No purchases — pick an active template.</p></div>
       )}
       <div className="form-row-3">
         <div className="form-group"><label className="form-label">Event type</label><input className="form-input" value={eventType} onChange={e => setET(e.target.value)} /></div>
         <div className="form-group"><label className="form-label">Community</label>
-          <select className="form-select" value={community} onChange={e => setCom(e.target.value)}>{['hindu', 'muslim', 'sikh', 'christian', 'jain', 'parsi', 'universal'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+          <Select className="form-select" value={community} onChange={e => setCom(e.target.value)}>{['hindu', 'muslim', 'sikh', 'christian', 'jain', 'parsi', 'universal'].map(c => <option key={c} value={c}>{c}</option>)}</Select></div>
         <div className="form-group"><label className="form-label">Language</label>
-          <select className="form-select" value={language} onChange={e => setLang(e.target.value)}>{['en', 'hi', 'gu', 'ur', 'pa', 'mr', 'kn', 'te', 'ml', 'ta'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}</select></div>
+          <Select className="form-select" value={language} onChange={e => setLang(e.target.value)}>{['en', 'hi', 'gu', 'ur', 'pa', 'mr', 'kn', 'te', 'ml', 'ta'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}</Select></div>
       </div>
       <div className="form-row">
         <div className="form-group"><label className="form-label">URL slug — full (optional)</label><input className="form-input" value={slugFull} onChange={e => setSF(e.target.value)} placeholder="Auto" /></div>
@@ -579,11 +580,11 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Type</label>
-              <select className="form-select" value={admMediaForm.type} onChange={(e) => setAdmMediaForm((f) => ({ ...f, type: e.target.value }))}>
+              <Select className="form-select" value={admMediaForm.type} onChange={(e) => setAdmMediaForm((f) => ({ ...f, type: e.target.value }))}>
                 <option value="photo">Photo</option>
                 <option value="music">Music</option>
                 <option value="video">Video</option>
-              </select>
+              </Select>
             </div>
             <div className="form-group">
               <label className="form-label">File</label>
@@ -620,12 +621,12 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
       <div className="form-row">
         <div className="form-group"><label className="form-label">Event type</label><input className="form-input" value={eventType} onChange={e => setET(e.target.value)} /></div>
         <div className="form-group"><label className="form-label">Community</label>
-          <select className="form-select" value={community} onChange={e => setCom(e.target.value)}>{['hindu', 'muslim', 'sikh', 'christian', 'jain', 'parsi', 'universal'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+          <Select className="form-select" value={community} onChange={e => setCom(e.target.value)}>{['hindu', 'muslim', 'sikh', 'christian', 'jain', 'parsi', 'universal'].map(c => <option key={c} value={c}>{c}</option>)}</Select></div>
       </div>
       <div className="form-row">
         <div className="form-group"><label className="form-label">URL slug</label><input className="form-input" value={slug} onChange={e => setSlug(e.target.value)} /></div>
         <div className="form-group"><label className="form-label">Language</label>
-          <select className="form-select" value={language} onChange={e => setLang(e.target.value)}>{['en', 'hi', 'gu', 'ur', 'pa', 'mr', 'kn', 'te', 'ml', 'ta'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}</select></div>
+          <Select className="form-select" value={language} onChange={e => setLang(e.target.value)}>{['en', 'hi', 'gu', 'ur', 'pa', 'mr', 'kn', 'te', 'ml', 'ta'].map(l => <option key={l} value={l}>{l.toUpperCase()}</option>)}</Select></div>
       </div>
       <hr className="divider" style={{ margin: '16px 0' }} />
       <div style={{ marginBottom: 12 }}><span style={SEC}>Functions / events</span></div>

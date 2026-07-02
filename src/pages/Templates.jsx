@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
 import { COMMUNITIES, ALL_EVENT_TYPES } from '../lib/constants';
 import { formatCurrency, formatDate } from '../lib/utils';
@@ -113,21 +114,21 @@ export default function Templates() {
 
       {/* Filters */}
       <div className="filters-bar">
-        <select className="filter-select" value={community} onChange={e => { setCommunity(e.target.value); setPage(1); }}>
+        <Select className="filter-select" value={community} onChange={e => { setCommunity(e.target.value); setPage(1); }}>
           <option value="">All communities</option>
           {COMMUNITIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
+        </Select>
 
-        <select className="filter-select" value={eventType} onChange={e => { setEventType(e.target.value); setPage(1); }}>
+        <Select className="filter-select" value={eventType} onChange={e => { setEventType(e.target.value); setPage(1); }}>
           <option value="">All event types</option>
           {ALL_EVENT_TYPES.map(et => <option key={et.id} value={et.id}>{et.label}</option>)}
-        </select>
+        </Select>
 
-        <select className="filter-select" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
+        <Select className="filter-select" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
           <option value="">All status</option>
           <option value="active">Active</option>
           <option value="draft">Draft</option>
-        </select>
+        </Select>
       </div>
 
       {/* Table */}

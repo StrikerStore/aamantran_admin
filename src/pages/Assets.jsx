@@ -1,5 +1,6 @@
 import { useState, useEffect, useLayoutEffect } from 'react';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { useToast } from '../components/ui/Toast';
 import { ConfirmModal } from '../components/ui/Modal';
 
@@ -95,13 +96,13 @@ export default function Assets() {
           </div>
           <div className="form-group" style={{ width: 150, margin: 0 }}>
             <label className="form-label">Type</label>
-            <select 
+            <Select 
               className="form-select" 
               value={form.type} 
               onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
             >
               <option value="bg_music">Background Music</option>
-            </select>
+            </Select>
           </div>
           <div className="form-group" style={{ flex: 1, minWidth: 200, margin: 0 }}>
             <label className="form-label">File</label>

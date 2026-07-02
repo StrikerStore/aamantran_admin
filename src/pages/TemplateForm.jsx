@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
 import { getInviteBaseUrl } from '../lib/config';
 import { formatCurrency } from '../lib/utils';
@@ -709,9 +710,9 @@ export default function TemplateForm() {
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Community <span className="req">*</span></label>
-                <select className="form-select" value={community} onChange={e => setCommunity(e.target.value)}>
+                <Select className="form-select" value={community} onChange={e => setCommunity(e.target.value)}>
                   {COMMUNITIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
+                </Select>
               </div>
               <div className="form-group">
                 <label className="form-label">Style</label>
@@ -974,13 +975,13 @@ export default function TemplateForm() {
                 <div className="form-row">
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Type</label>
-                    <select className="form-select" value={cf.type} onChange={e => updateCustomField(i, 'type', e.target.value)}>
+                    <Select className="form-select" value={cf.type} onChange={e => updateCustomField(i, 'type', e.target.value)}>
                       <option value="text">Text (short)</option>
                       <option value="textarea">Textarea (long)</option>
                       <option value="html">HTML (rich text)</option>
                       <option value="number">Number</option>
                       <option value="date">Date</option>
-                    </select>
+                    </Select>
                   </div>
                   <div className="form-group" style={{ marginBottom: 8, display: 'flex', alignItems: 'flex-end', paddingBottom: 4 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.86rem', cursor: 'pointer' }}>
@@ -1043,11 +1044,11 @@ export default function TemplateForm() {
                 <div className="form-row">
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Type</label>
-                    <select className="form-select" value={row.type} onChange={(e) => updateMediaSlot(i, 'type', e.target.value)}>
+                    <Select className="form-select" value={row.type} onChange={(e) => updateMediaSlot(i, 'type', e.target.value)}>
                       <option value="photo">Photo / image</option>
                       <option value="music">Music / audio</option>
                       <option value="video">Video</option>
-                    </select>
+                    </Select>
                   </div>
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Max files</label>
@@ -1288,9 +1289,9 @@ export default function TemplateForm() {
           <div className="card-body">
             <div className="form-group">
               <label className="form-label">Language</label>
-              <select className="form-select" value={demoLanguage} onChange={e => setDemoLanguage(e.target.value)}>
+              <Select className="form-select" value={demoLanguage} onChange={e => setDemoLanguage(e.target.value)}>
                 {LANGUAGES.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
         </div>

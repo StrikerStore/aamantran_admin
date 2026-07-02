@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { formatRelative } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Pagination } from '../components/ui/Pagination';
@@ -49,11 +50,11 @@ export default function Tickets() {
 
       {/* Filters */}
       <div className="filters-bar">
-        <select className="filter-select" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
+        <Select className="filter-select" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
           <option value="open">Open</option>
           <option value="resolved">Resolved</option>
           <option value="">All</option>
-        </select>
+        </Select>
       </div>
 
       <div className="table-container">

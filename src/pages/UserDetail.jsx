@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { getInviteBaseUrl } from '../lib/config';
 import {
   computeFunctionSortOrders,
@@ -770,12 +771,12 @@ function SwapTemplateModal({ userId, event, onClose, onSuccess }) {
       </p>
       <div className="form-group">
         <label className="form-label">New template</label>
-        <select className="form-select" value={selected} onChange={(e) => setSelected(e.target.value)}>
+        <Select className="form-select" value={selected} onChange={(e) => setSelected(e.target.value)}>
           <option value="">Select…</option>
           {templates.map((t) => (
             <option key={t.id} value={t.id}>{t.name} — {t.community} — {formatCurrency(t.price)}</option>
           ))}
-        </select>
+        </Select>
       </div>
       {picked && delta !== null && (
         <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 8, background: 'var(--bg-elevated)', fontSize: '0.86rem' }}>
@@ -863,23 +864,23 @@ function SwapPairedTemplateModal({ userId, pairs, onClose, onSuccess }) {
       {pairs.length > 1 && (
         <div className="form-group">
           <label className="form-label">Paired set</label>
-          <select className="form-select" value={invitePairId} onChange={(e) => setInvitePairId(e.target.value)}>
+          <Select className="form-select" value={invitePairId} onChange={(e) => setInvitePairId(e.target.value)}>
             {pairs.map((p) => (
               <option key={p.pairId} value={p.pairId}>
                 {(p.full.brideName || '—')} &amp; {(p.full.groomName || '—')} · /{p.full.slug} + /{p.subset.slug}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
       <div className="form-group">
         <label className="form-label">New template</label>
-        <select className="form-select" value={selected} onChange={(e) => setSelected(e.target.value)}>
+        <Select className="form-select" value={selected} onChange={(e) => setSelected(e.target.value)}>
           <option value="">Select…</option>
           {templates.map((t) => (
             <option key={t.id} value={t.id}>{t.name} — {t.community} — {formatCurrency(t.price)}</option>
           ))}
-        </select>
+        </Select>
       </div>
       {picked && delta !== null && (
         <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 8, background: 'var(--bg-elevated)', fontSize: '0.86rem' }}>

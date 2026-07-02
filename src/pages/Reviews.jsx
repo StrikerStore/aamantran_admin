@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
 
@@ -136,7 +137,7 @@ export default function Reviews() {
           <p className="page-subtitle">{total} total review{total !== 1 ? 's' : ''}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <select
+          <Select
             className="form-input"
             style={{ width: 160 }}
             value={hiddenFilter}
@@ -145,7 +146,7 @@ export default function Reviews() {
             <option value="">All reviews</option>
             <option value="false">Visible only</option>
             <option value="true">Hidden only</option>
-          </select>
+          </Select>
           <Button variant="primary" onClick={() => { setShowForm(v => !v); if (showForm) resetForm(); }}>
             {showForm ? 'Cancel' : '+ Add Review'}
           </Button>
@@ -160,19 +161,19 @@ export default function Reviews() {
             <form className="form-row-3" onSubmit={submitReview}>
               <div className="form-group">
                 <label className="form-label">Template *</label>
-                <select className="form-input" value={form.templateId} onChange={field('templateId')} required>
+                <Select className="form-input" value={form.templateId} onChange={field('templateId')} required>
                   <option value="">Select template…</option>
                   {templates.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               <div className="form-group">
                 <label className="form-label">Rating *</label>
-                <select className="form-input" value={form.rating} onChange={field('rating')}>
+                <Select className="form-input" value={form.rating} onChange={field('rating')}>
                   {STARS.map(s => <option key={s} value={s}>{s} ★</option>)}
-                </select>
+                </Select>
               </div>
 
               <div className="form-group">
