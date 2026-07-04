@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 
 import Login            from './pages/Login';
 import Dashboard        from './pages/Dashboard';
+import Analytics        from './pages/Analytics';
 import Templates        from './pages/Templates';
 import TemplateForm     from './pages/TemplateForm';
 import Users            from './pages/Users';
@@ -38,6 +39,7 @@ export default function App() {
             </ProtectedRoute>
           }>
             <Route path="dashboard"              element={<Dashboard />} />
+            <Route path="analytics"              element={<Analytics />} />
             <Route path="templates"              element={<Templates />} />
             <Route path="templates/new"          element={<TemplateForm />} />
             <Route path="templates/:id/edit"     element={<TemplateForm />} />

@@ -143,6 +143,11 @@ export const api = {
     remove: (id)   => request('DELETE', `/assets/${id}`),
   },
 
+  analytics: {
+    summary: (params) => request('GET', '/analytics/summary', { params }),
+    live:    ()       => request('GET', '/analytics/live'),
+  },
+
   reviews: {
     list:   (params) => request('GET',    '/reviews', { params }),
     create: (fd)     => request('POST',   '/reviews', { body: fd, multipart: true }),

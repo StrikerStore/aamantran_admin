@@ -7,7 +7,10 @@ import './Layout.css';
 const NAV = [
   {
     section: 'Overview',
-    items: [{ label: 'Dashboard', to: '/dashboard', icon: IconGrid }],
+    items: [
+      { label: 'Dashboard', to: '/dashboard', icon: IconGrid },
+      { label: 'Analytics', to: '/analytics', icon: IconChart },
+    ],
   },
   {
     section: 'Catalogue',
@@ -214,6 +217,14 @@ function IconAsset() {
       <path d="M9 18V5l12-2v13"></path>
       <circle cx="6" cy="18" r="3"></circle>
       <circle cx="18" cy="16" r="3"></circle>
+    </svg>
+  );
+}
+function IconChart() {
+  return (
+    <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      <line x1="2" y1="20" x2="22" y2="20"/>
     </svg>
   );
 }
