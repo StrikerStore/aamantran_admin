@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useToast } from '../components/ui/Toast';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
+import { getLandingUrl } from '../lib/config';
 
 function slugify(str) {
   return str
@@ -117,11 +118,15 @@ export default function BlogEditor() {
     try {
       const fd = buildFormData();
       if (isEdit) {
+        // Updating never changes status — a published post stays published,
+        // so this is how edits go live without unpublishing first.
         await api.blog.update(id, fd);
-        toast.success('Post updated');
+        toast.success(status === 'published'
+          ? 'Post updated — changes are now live'
+          : 'Draft saved');
       } else {
         const post = await api.blog.create(fd);
-        toast.success('Post created');
+        toast.success('Draft saved');
         navigate(`/blog/${post.id}/edit`, { replace: true });
       }
     } catch (e) {
@@ -198,20 +203,40 @@ export default function BlogEditor() {
           </div>
         </div>
         <div className="be-header-actions">
-          <button className="be-btn be-btn-secondary" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Draft'}
-          </button>
-          {status === 'published' && isEdit ? (
-            <button className="be-btn be-btn-warning" onClick={handleUnpublish} disabled={saving}>
-              Unpublish
-            </button>
+          {isEdit && status === 'published' ? (
+            <>
+              <a
+                className="be-btn be-btn-ghost"
+                href={`${getLandingUrl()}/blog/${form.slug}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View live ↗
+              </a>
+              <button className="be-btn be-btn-warning" onClick={handleUnpublish} disabled={saving}>
+                Unpublish
+              </button>
+              <button className="be-btn be-btn-primary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Updating…' : 'Update Post'}
+              </button>
+            </>
           ) : (
-            <button className="be-btn be-btn-primary" onClick={handlePublish} disabled={saving}>
-              {saving ? 'Publishing…' : 'Publish'}
-            </button>
+            <>
+              <button className="be-btn be-btn-secondary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving…' : 'Save Draft'}
+              </button>
+              <button className="be-btn be-btn-primary" onClick={handlePublish} disabled={saving}>
+                {saving ? 'Publishing…' : 'Publish'}
+              </button>
+            </>
           )}
         </div>
       </div>
+      {isEdit && status === 'published' && (
+        <p className="be-live-note">
+          This post is live. Editing and clicking <strong>Update Post</strong> pushes your changes to the site — no need to unpublish first.
+        </p>
+      )}
 
       <div className="be-grid">
         {/* Main column */}
@@ -461,6 +486,17 @@ const editorStyles = `
 .be-btn-secondary:hover { background: var(--bg-elevated); border-color: var(--gold); }
 .be-btn-warning { background: var(--peach-soft); color: var(--peach-deep); }
 .be-btn-warning:hover { filter: brightness(.96); }
+.be-btn-ghost {
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border-default); text-decoration: none;
+  display: inline-flex; align-items: center;
+}
+.be-btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+.be-live-note {
+  margin: -12px 0 20px; padding: 10px 14px; border-radius: var(--r-sm);
+  background: var(--mint-soft); color: var(--mint-deep);
+  font-size: .8rem; line-height: 1.5;
+}
 .be-btn-sm { padding: 5px 12px; font-size: .78rem; border-radius: 8px; background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border-subtle); cursor: pointer; }
 .be-btn-sm:hover { border-color: var(--gold); color: var(--gold); }
 
