@@ -155,6 +155,16 @@ export const api = {
     show:   (id)     => request('PATCH',  `/reviews/${id}/show`),
     remove: (id)     => request('DELETE', `/reviews/${id}`),
   },
+
+  blog: {
+    list:      (params) => request('GET',    '/blog', { params }),
+    get:       (id)     => request('GET',    `/blog/${id}`),
+    create:    (fd)     => request('POST',   '/blog', { body: fd, multipart: true }),
+    update:    (id, fd) => request('PUT',    `/blog/${id}`, { body: fd, multipart: true }),
+    publish:   (id)     => request('PATCH',  `/blog/${id}/publish`),
+    unpublish: (id)     => request('PATCH',  `/blog/${id}/unpublish`),
+    remove:    (id)     => request('DELETE', `/blog/${id}`),
+  },
 };
 
 export { ApiError };

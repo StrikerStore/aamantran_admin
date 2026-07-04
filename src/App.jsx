@@ -17,6 +17,8 @@ import Tickets          from './pages/Tickets';
 import TicketDetail     from './pages/TicketDetail';
 import Assets           from './pages/Assets';
 import Reviews          from './pages/Reviews';
+import BlogPosts        from './pages/BlogPosts';
+import BlogEditor       from './pages/BlogEditor';
 
 function ProtectedRoute({ children }) {
   const location = useLocation();
@@ -52,6 +54,9 @@ export default function App() {
             <Route path="tickets"                element={<Tickets />} />
             <Route path="tickets/:id"            element={<TicketDetail />} />
             <Route path="reviews"                element={<Reviews />} />
+            <Route path="blog"                   element={<BlogPosts />} />
+            <Route path="blog/new"               element={<BlogEditor />} />
+            <Route path="blog/:id/edit"          element={<BlogEditor />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
