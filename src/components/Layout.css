@@ -7,7 +7,9 @@
 /* ── Sidebar ── */
 .sidebar {
   width: var(--sidebar-w);
-  min-height: 100vh;
+  /* Bounded height so .sidebar-nav can scroll and the footer stays pinned in view */
+  height: 100vh;
+  height: 100dvh;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -22,6 +24,7 @@
 .sidebar-logo {
   padding: 24px 24px 16px;
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .sidebar-logo-row {
@@ -56,6 +59,7 @@
 
 .sidebar-nav {
   flex: 1;
+  min-height: 0; /* allow the flex child to shrink so overflow-y actually scrolls */
   padding: 16px 12px;
   overflow-y: auto;
 }
@@ -135,6 +139,8 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
 .sidebar-footer {
   padding: 16px 20px;
   border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
 }
 
 .sidebar-user {
