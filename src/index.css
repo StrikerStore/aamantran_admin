@@ -56,6 +56,15 @@
   --t-fast: 140ms cubic-bezier(0.4,0,0.2,1);
   --t-base: 220ms cubic-bezier(0.4,0,0.2,1);
 
+  /* Sidebar collapse/expand. Decelerating curve (fast start, soft landing) so
+     the rail feels responsive to the click despite being a layout animation.
+     Every element inside the rail shares this exact timing — mismatched
+     durations were what made the old version look like things were popping. */
+  --t-collapse: 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  /* Labels fade slightly faster than the rail moves, so text is gone before the
+     space runs out instead of being visibly clipped mid-word. */
+  --t-collapse-label: 150ms cubic-bezier(0.4, 0, 1, 1);
+
   /* Standard interactive transition. Use this instead of `transition: all`,
      which also animates layout properties (width, padding, font-size) and
      forces a reflow per frame. Every property below is paint or composite. */

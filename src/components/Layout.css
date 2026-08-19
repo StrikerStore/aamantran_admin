@@ -17,12 +17,12 @@
   position: fixed;
   top: 0; left: 0;
   z-index: 100;
-  /* Only transform is animated. Transitioning `width` here (and `margin-left`
-     on .main) re-laid out the whole page every frame for 220ms — with a long
-     table on screen that was the most expensive animation in the app. The
-     desktop rail now snaps: one reflow instead of ~13. The mobile drawer still
-     slides, because transform is compositor-only and effectively free. */
-  transition: transform var(--t-base);
+  /* width: the desktop rail collapse. transform: the mobile drawer slide.
+     Resizing a layout column reflows the page each frame, so this is kept
+     short and eased-out — most of the motion happens up front, which reads as
+     responsive rather than sluggish. Everything inside the rail animates on the
+     same curve and duration so the whole thing moves as one piece. */
+  transition: width var(--t-collapse), transform var(--t-base);
   box-shadow: 4px 0 20px rgba(108,92,231,0.08);
 }
 
@@ -208,25 +208,97 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* No margin-left transition — see the note on .sidebar above. */
+  /* Must match .sidebar's width timing exactly, or the content edge visibly
+     drifts away from the rail during the transition. */
+  transition: margin-left var(--t-collapse);
 }
 
 /* ── Collapsed icon rail (desktop only) ── */
 @media (min-width: 901px) {
   .app-shell.collapsed { --sidebar-w: 76px; }
 
+  /* Text that disappears in the rail. These were `display: none`, which is not
+     animatable — the labels blinked out on the first frame while the rail was
+     still moving, and that pop was most of what made the collapse feel abrupt.
+     Fading opacity and collapsing max-width instead lets them retract with the
+     rail. max-width (not width) keeps the expanded size intrinsic. */
+  .logotype,
+  .admin-badge,
+  .sidebar-user-info,
+  .nav-item > span:not(.nav-badge) {
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 180px;
+    transition: opacity var(--t-collapse-label), max-width var(--t-collapse);
+  }
+
   .app-shell.collapsed .logotype,
   .app-shell.collapsed .admin-badge,
-  .app-shell.collapsed .sidebar-user-info { display: none; }
+  .app-shell.collapsed .sidebar-user-info,
+  .app-shell.collapsed .nav-item > span:not(.nav-badge) {
+    opacity: 0;
+    max-width: 0;
+  }
 
+  /* admin-badge and sidebar-user-info are block-level, so zero width still
+     leaves their line-height behind as empty space — where `display: none`
+     used to remove the box entirely. Collapse their height too, or the rail
+     grows a dead gap under the logo and above the avatar. max-height is used
+     because height: auto is not interpolatable. */
+  .admin-badge {
+    max-height: 24px;
+    transition: opacity var(--t-collapse-label),
+                max-width var(--t-collapse),
+                max-height var(--t-collapse),
+                margin-top var(--t-collapse);
+  }
+  .app-shell.collapsed .admin-badge { max-height: 0; margin-top: 0; }
+
+  .sidebar-user-info {
+    max-height: 48px;
+    transition: opacity var(--t-collapse-label),
+                max-width var(--t-collapse),
+                max-height var(--t-collapse);
+  }
+  .app-shell.collapsed .sidebar-user-info { max-height: 0; }
+
+  /* Gaps have to close too, otherwise the icons stay off-centre in the rail
+     while the now-zero-width labels still reserve their flex gap. */
+  .sidebar-logo-row { transition: gap var(--t-collapse); }
+  /* Repeats the base background/color transition — a bare `transition` here
+     would replace it and kill the hover fade on desktop. */
+  .nav-item {
+    transition: background var(--t-fast), color var(--t-fast),
+                gap var(--t-collapse), padding var(--t-collapse);
+  }
+  .app-shell.collapsed .sidebar-logo-row,
+  .app-shell.collapsed .nav-item { gap: 0; }
+
+  .sidebar-logo { transition: padding var(--t-collapse); }
   .app-shell.collapsed .sidebar-logo { padding: 20px 8px 12px; }
   .app-shell.collapsed .sidebar-logo-row { justify-content: center; }
+
+  .sidebar-logo-img { transition: width var(--t-collapse), height var(--t-collapse); }
   .app-shell.collapsed .sidebar-logo-img { width: 36px; height: 36px; }
 
-  /* Section labels become thin dividers */
+  /* Section labels shrink into thin dividers rather than snapping. font-size
+     must be listed explicitly: it is animatable, but an unlisted property
+     still steps instantly, which would drop the text on frame one. */
+  .nav-section-label {
+    overflow: hidden;
+    max-height: 44px; /* height: auto cannot be interpolated; max-height can */
+    transition: opacity var(--t-collapse-label),
+                font-size var(--t-collapse),
+                max-height var(--t-collapse),
+                padding var(--t-collapse),
+                margin var(--t-collapse),
+                background-color var(--t-collapse);
+  }
   .app-shell.collapsed .nav-section-label {
     font-size: 0;
+    opacity: 0.9;
     padding: 0;
+    max-height: 1px;
     height: 1px;
     background: var(--border-default);
     margin: 12px 14px;
@@ -236,8 +308,9 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
     justify-content: center;
     padding: 10px;
   }
-  .app-shell.collapsed .nav-item > span:not(.nav-badge) { display: none; }
-  .app-shell.collapsed .nav-item.active::before { display: none; }
+  /* Fades out with the label rather than vanishing on frame one. */
+  .nav-item.active::before { transition: opacity var(--t-collapse-label); }
+  .app-shell.collapsed .nav-item.active::before { opacity: 0; }
 
   .app-shell.collapsed .nav-badge {
     position: absolute;
@@ -249,11 +322,22 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
     font-size: 0.6rem;
   }
 
+  .sidebar-footer { transition: padding var(--t-collapse); }
   .app-shell.collapsed .sidebar-footer { padding: 12px 8px; }
-  .app-shell.collapsed .sidebar-user {
-    flex-direction: column;
-    gap: 8px;
+
+  /* Reaching the icon rail's avatar-over-button stack by wrapping instead of
+     switching flex-direction. flex-direction is discrete, so it flipped on
+     frame one while the rail was still moving — a visible pop against an
+     otherwise eased transition. Wrapping happens at the moment the two
+     controls genuinely stop fitting, partway through, and degrades safely
+     whichever side of the threshold the final width lands on. */
+  .sidebar-user {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 8px;
+    transition: gap var(--t-collapse);
   }
+  .app-shell.collapsed .sidebar-user { gap: 8px 4px; }
 }
 
 /* ── Topbar ── */
