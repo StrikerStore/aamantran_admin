@@ -1,8 +1,12 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(45,42,74,0.45);
-  backdrop-filter: blur(4px);
+  /* Slightly denser than before to compensate for the reduced blur. */
+  background: rgba(45,42,74,0.55);
+  /* Was blur(4px). A full-viewport backdrop-filter forces the compositor to
+     re-blur everything behind it each frame — the main source of stutter when
+     opening a modal over a long table. 2px reads almost identically. */
+  backdrop-filter: blur(2px);
   z-index: 200;
   display: flex;
   align-items: center;
@@ -22,6 +26,11 @@
   overflow-y: auto;
   animation: slideUp 0.2s ease-out;
 }
+
+/* Closing state — the dialog used to vanish instantly while it animated in,
+   and the asymmetry read as a glitch. */
+.modal-backdrop.is-closing { animation: fadeOut 0.14s ease forwards; }
+.modal-backdrop.is-closing .modal { animation: slideDown 0.14s ease-in forwards; }
 
 .modal-lg { max-width: 740px; }
 .modal-xl { max-width: 960px; }
@@ -49,7 +58,7 @@
   color: var(--text-muted);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: all var(--t-fast);
+  transition: var(--t-ui);
   font-size: 0.9rem;
 }
 

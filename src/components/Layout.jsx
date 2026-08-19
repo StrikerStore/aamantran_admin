@@ -1,8 +1,39 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { clearToken, getAdminInfo } from '../lib/auth';
 import { api } from '../lib/api';
 import './Layout.css';
+
+/**
+ * Topbar title, derived from the route rather than written into the DOM by each
+ * page. Pages used to set it in their own layout effect, which left the previous
+ * page's title on screen during navigation and skipped the blog routes entirely.
+ * First match wins, so specific patterns come before their prefixes.
+ */
+const TITLES = [
+  [/^\/dashboard/,                'Overview'],
+  [/^\/analytics/,                'Website Analytics'],
+  [/^\/templates\/new/,           'Add Template'],
+  [/^\/templates\/[^/]+\/edit/,   'Edit Template'],
+  [/^\/templates/,                'Templates'],
+  [/^\/assets/,                   'Assets'],
+  [/^\/users\/[^/]+/,             'User Detail'],
+  [/^\/users/,                    'Users'],
+  [/^\/transactions\/[^/]+/,      'Transaction Detail'],
+  [/^\/transactions/,             'Transactions'],
+  [/^\/coupons/,                  'Coupons'],
+  [/^\/tickets\/[^/]+/,           'Support Ticket'],
+  [/^\/tickets/,                  'Support Tickets'],
+  [/^\/reviews/,                  'Reviews'],
+  [/^\/blog\/new/,                'New Post'],
+  [/^\/blog\/[^/]+\/edit/,        'Edit Post'],
+  [/^\/blog/,                     'Blog'],
+];
+
+function titleForPath(pathname) {
+  const hit = TITLES.find(([re]) => re.test(pathname));
+  return hit ? hit[1] : '';
+}
 
 const NAV = [
   {
@@ -42,6 +73,7 @@ const NAV = [
 
 export function Layout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const info = getAdminInfo();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('aam_admin_sidebar') === 'collapsed');
@@ -79,7 +111,9 @@ export function Layout() {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar">
         <div className="sidebar-logo">
           <div className="sidebar-logo-row">
-            <img src="/logo.png" alt="" className="sidebar-logo-img" width="40" height="40" decoding="async" />
+            {/* 80px source for a 40px slot (2x displays). Was logo.png at
+                1024x1024 / 281KB — the single heaviest asset in the panel. */}
+            <img src="/logo-80.png" alt="" className="sidebar-logo-img" width="40" height="40" decoding="async" />
             <div className="logotype">Aamantran</div>
           </div>
           <div className="admin-badge">Admin Panel</div>
@@ -137,7 +171,7 @@ export function Layout() {
           >
             <IconMenu />
           </button>
-          <div id="topbar-title-slot" className="topbar-title" />
+          <div className="topbar-title">{titleForPath(location.pathname)}</div>
           <div className="topbar-actions" id="topbar-actions-slot" />
         </header>
 

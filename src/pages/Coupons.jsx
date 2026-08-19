@@ -1,17 +1,19 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
+import { Pagination } from '../components/ui/Pagination';
 
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
+const PAGE_SIZE = 20;
 
 export default function Coupons() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadedOnce = useRef(false);
   const [coupons, setCoupons] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [code, setCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
@@ -20,19 +22,20 @@ export default function Coupons() {
   const [minOrderAmount, setMinOrderAmount] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useLayoutEffect(() => { setTopbarTitle('Coupons'); }, []);
-
   const load = useCallback(async () => {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     try {
-      const res = await api.coupons.list();
+      const res = await api.coupons.list({ page, limit: PAGE_SIZE });
       setCoupons(res.data || []);
+      setTotal(res.total ?? (res.data || []).length);
     } catch (err) {
       toast(err.message || 'Failed to load coupons', 'error');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadedOnce.current = true;
     }
-  }, [toast]);
+  }, [toast, page]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -128,7 +131,8 @@ export default function Coupons() {
         </div>
       </div>
 
-      <div className="table-container">
+      {refreshing && <div className="refresh-bar" />}
+      <div className={`table-container${refreshing ? ' is-refreshing' : ''}`}>
         {loading ? (
           <div className="spinner-wrap"><div className="spinner" /></div>
         ) : (
@@ -175,6 +179,10 @@ export default function Coupons() {
             </tbody>
           </table>
         )}
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <Pagination total={total} page={page} limit={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </div>
   );

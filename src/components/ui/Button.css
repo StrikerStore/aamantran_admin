@@ -8,7 +8,7 @@
   font-weight: 700;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: all var(--t-fast);
+  transition: var(--t-ui);
   white-space: nowrap;
   line-height: 1;
   text-decoration: none;

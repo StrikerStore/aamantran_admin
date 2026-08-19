@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
@@ -42,11 +42,6 @@ const CATEGORY_COLORS = {
   'Retirement':      PASTEL.neutral,
 };
 
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
-
 export default function Templates() {
   const navigate = useNavigate();
   const toast    = useToast();
@@ -55,15 +50,15 @@ export default function Templates() {
   const [total,     setTotal]     = useState(0);
   const [page,      setPage]      = useState(1);
   const [loading,   setLoading]   = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadedOnce = useRef(false);
   const [community, setCommunity] = useState('');
   const [eventType, setEventType] = useState('');
   const [status,    setStatus]    = useState('');
   const [confirm,   setConfirm]   = useState(null);
 
-  useLayoutEffect(() => { setTopbarTitle('Templates'); }, []);
-
   const load = useCallback(async () => {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     try {
       const res = await api.templates.list({
         community: community || undefined,
@@ -78,6 +73,8 @@ export default function Templates() {
       toast(err.message, 'error');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadedOnce.current = true;
     }
   }, [community, eventType, status, page, toast]);
 
@@ -132,7 +129,8 @@ export default function Templates() {
       </div>
 
       {/* Table */}
-      <div className="table-container">
+      {refreshing && <div className="refresh-bar" />}
+      <div className={`table-container${refreshing ? ' is-refreshing' : ''}`}>
         {loading ? (
           <div className="spinner-wrap"><div className="spinner" /></div>
         ) : templates.length === 0 ? (

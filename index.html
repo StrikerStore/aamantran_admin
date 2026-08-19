@@ -5,16 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex,nofollow" />
     <title>Aamantran Admin</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+    <!-- favicon.ico (4KB) is the tab icon. The 1024x1024 logo.png was previously
+         declared here at 32x32, costing every page load a 281KB download and
+         decode for a 32px slot. -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo-180.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Trimmed to the weights actually used (was 11 files, now 8): Baloo 2 500
+         and Nunito 800 and DM Mono 500 were never referenced in any stylesheet.
+         Loaded via preload+onload so the fonts no longer block first paint;
+         display=swap means text renders immediately in the fallback face. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

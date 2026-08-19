@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
-
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -17,6 +12,8 @@ export default function Reviews() {
   const toast = useToast();
 
   const [loading, setLoading]           = useState(true);
+  const [refreshing, setRefreshing]     = useState(false);
+  const loadedOnce = useRef(false);
   const [reviews, setReviews]           = useState([]);
   const [total, setTotal]               = useState(0);
   const [hiddenFilter, setHiddenFilter] = useState('');
@@ -30,10 +27,8 @@ export default function Reviews() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  useLayoutEffect(() => { setTopbarTitle('Reviews'); }, []);
-
   const load = useCallback(async () => {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     try {
       const params = {};
       if (hiddenFilter !== '') params.hidden = hiddenFilter;
@@ -44,6 +39,8 @@ export default function Reviews() {
       toast(err.message || 'Failed to load reviews', 'error');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadedOnce.current = true;
     }
   }, [hiddenFilter, toast]);
 
@@ -194,6 +191,9 @@ export default function Reviews() {
                     <img
                       src={photoPreview}
                       alt="preview"
+                      width="56"
+                      height="56"
+                      decoding="async"
                       style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }}
                     />
                   ) : (
@@ -251,7 +251,8 @@ export default function Reviews() {
       )}
 
       {/* Reviews table */}
-      <div className="table-container">
+      {refreshing && <div className="refresh-bar" />}
+      <div className={`table-container${refreshing ? ' is-refreshing' : ''}`}>
         {loading ? (
           <div className="spinner-wrap"><div className="spinner" /></div>
         ) : (
@@ -286,6 +287,10 @@ export default function Reviews() {
                         <img
                           src={r.couplePhotoUrl}
                           alt=""
+                          width="32"
+                          height="32"
+                          loading="lazy"
+                          decoding="async"
                           style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                         />
                       )}

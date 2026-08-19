@@ -25,7 +25,7 @@
   color: var(--text-secondary);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all var(--t-fast);
+  transition: var(--t-ui);
 }
 
 .page-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }

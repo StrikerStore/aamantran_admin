@@ -1,40 +1,44 @@
-import { useState, useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
 import { useToast } from '../components/ui/Toast';
+import { Pagination } from '../components/ui/Pagination';
 import { ConfirmModal } from '../components/ui/Modal';
 
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
+const PAGE_SIZE = 20;
 
 export default function Assets() {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadedOnce = useRef(false);
   const [uploading, setUploading] = useState(false);
   const [deletingAsset, setDeletingAsset] = useState(null);
   
   const [form, setForm] = useState({ name: '', type: 'bg_music', file: null });
   const toast = useToast();
 
-  useLayoutEffect(() => { setTopbarTitle('Assets'); }, []);
-
   async function loadAssets() {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     try {
-      const res = await api.assets.list();
+      const res = await api.assets.list({ page, limit: PAGE_SIZE });
       setAssets(res.assets || []);
+      setTotal(res.total ?? (res.assets || []).length);
     } catch (err) {
       toast(err.message, 'error');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadedOnce.current = true;
     }
   }
 
   useEffect(() => {
     loadAssets();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   async function handleUpload(e) {
     e.preventDefault();
@@ -122,7 +126,8 @@ export default function Assets() {
         </form>
       </div>
 
-      <div className="table-container">
+      {refreshing && <div className="refresh-bar" />}
+      <div className={`table-container${refreshing ? ' is-refreshing' : ''}`}>
         <table className="table">
           <thead>
             <tr>
@@ -157,6 +162,10 @@ export default function Assets() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <Pagination total={total} page={page} limit={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       {deletingAsset && (

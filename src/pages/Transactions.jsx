@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
@@ -6,11 +6,6 @@ import { formatCurrency, formatDate } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Pagination } from '../components/ui/Pagination';
 import { useToast } from '../components/ui/Toast';
-
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
 
 export default function Transactions() {
   const navigate = useNavigate();
@@ -21,11 +16,11 @@ export default function Transactions() {
   const [page,    setPage]    = useState(1);
   const [status,  setStatus]  = useState('');
   const [loading, setLoading] = useState(true);
-
-  useLayoutEffect(() => { setTopbarTitle('Transactions'); }, []);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadedOnce = useRef(false);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     try {
       const res = await api.transactions.list({ status: status || undefined, page, limit: 20 });
       setTxs(res.data);
@@ -34,6 +29,8 @@ export default function Transactions() {
       toast(err.message, 'error');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadedOnce.current = true;
     }
   }, [status, page, toast]);
 
@@ -59,7 +56,8 @@ export default function Transactions() {
         </Select>
       </div>
 
-      <div className="table-container">
+      {refreshing && <div className="refresh-bar" />}
+      <div className={`table-container${refreshing ? ' is-refreshing' : ''}`}>
         {loading ? (
           <div className="spinner-wrap"><div className="spinner" /></div>
         ) : txs.length === 0 ? (

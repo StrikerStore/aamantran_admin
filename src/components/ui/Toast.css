@@ -26,6 +26,9 @@
   pointer-events: all;
 }
 
+/* Exit animation — duration must stay in sync with EXIT_MS in Toast.jsx. */
+.toast.is-leaving { animation: toastOut 0.2s ease-in forwards; }
+
 .toast-success { border-left: 4px solid var(--mint); }
 .toast-error   { border-left: 4px solid var(--rose); }
 .toast-info    { border-left: 4px solid var(--sky); }

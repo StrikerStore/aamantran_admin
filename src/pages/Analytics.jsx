@@ -1,10 +1,5 @@
-import { useState, useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
-
-function setTopbarTitle(title) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = title;
-}
 
 const PRESETS = [
   { label: 'Today', days: 0 },
@@ -30,27 +25,41 @@ export default function Analytics() {
   const [data, setData] = useState(null);
   const [live, setLive] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const loadedOnce = useRef(false);
 
-  useLayoutEffect(() => { setTopbarTitle('Website Analytics'); }, []);
-
+  // Switching date preset keeps the current charts on screen and dims them,
+  // rather than blanking the page back to a spinner.
   useEffect(() => {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     setError('');
     const to = new Date();
     const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     api.analytics.summary({ from: isoDay(from), to: isoDay(to) })
       .then(setData)
       .catch(e => setError(e.message || 'Failed to load analytics'))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+        loadedOnce.current = true;
+      });
   }, [days]);
 
-  // Live visitors refresh every 30s
+  // Live visitors refresh every 30s — but only while the tab is actually
+  // visible. It used to keep polling in a background tab indefinitely.
   useEffect(() => {
-    const load = () => api.analytics.live().then(setLive).catch(() => {});
+    const load = () => {
+      if (document.visibilityState !== 'visible') return;
+      api.analytics.live().then(setLive).catch(() => {});
+    };
     load();
     const t = setInterval(load, 30000);
-    return () => clearInterval(t);
+    document.addEventListener('visibilitychange', load);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', load);
+    };
   }, []);
 
   const ov = data?.overview;
@@ -78,9 +87,10 @@ export default function Analytics() {
 
       {error && <div className="card" style={{ padding: 20, color: 'var(--rose, #b42318)' }}>{error}</div>}
       {loading && <div className="spinner-wrap"><div className="spinner" /></div>}
+      {refreshing && <div className="refresh-bar" />}
 
       {!loading && data && (
-        <>
+        <div className={refreshing ? 'is-refreshing' : undefined}>
           {/* Overview cards */}
           <div className="stats-grid">
             <StatCard label="Visitors" value={fmt(ov.visitors)} accent="var(--lav)" />
@@ -143,7 +153,7 @@ export default function Analytics() {
               <BreakdownRows rows={live.activePages.map(p => [p.path, p.views])} mono />
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

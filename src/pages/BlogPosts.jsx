@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useToast } from '../components/ui/Toast';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
+import './BlogPosts.css';
 
 const STATUS_TABS = [
   { key: '',          label: 'All' },
@@ -18,10 +19,12 @@ export default function BlogPosts() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadedOnce = useRef(false);
   const [deleting, setDeleting] = useState(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     try {
       const res = await api.blog.list({ page, limit: 20, ...(status ? { status } : {}) });
       setPosts(res.posts || []);
@@ -30,6 +33,8 @@ export default function BlogPosts() {
       toast.error(e.message);
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadedOnce.current = true;
     }
   }, [page, status]);
 
@@ -68,7 +73,6 @@ export default function BlogPosts() {
 
   return (
     <div className="blog-page">
-      <style>{blogStyles}</style>
 
       <div className="blog-header">
         <div>
@@ -94,7 +98,8 @@ export default function BlogPosts() {
         ))}
       </div>
 
-      {/* Posts table */}
+      {/* Posts table — rows stay visible while a tab/page change loads */}
+      {refreshing && <div className="refresh-bar" />}
       {loading ? (
         <div className="blog-loading">Loading…</div>
       ) : posts.length === 0 ? (
@@ -106,7 +111,7 @@ export default function BlogPosts() {
           <p>No posts yet. Create your first blog post!</p>
         </div>
       ) : (
-        <div className="blog-table-wrap">
+        <div className={`blog-table-wrap${refreshing ? ' is-refreshing' : ''}`}>
           <table className="blog-table">
             <thead>
               <tr>
@@ -131,6 +136,10 @@ export default function BlogPosts() {
                         src={resolvePublicUrl(post.coverImageUrl)}
                         alt=""
                         className="blog-cover-thumb"
+                        width="42"
+                        height="42"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
                       <div className="blog-cover-placeholder">
@@ -210,104 +219,3 @@ export default function BlogPosts() {
   );
 }
 
-/* ── Scoped styles ── */
-const blogStyles = `
-.blog-page { max-width: 1100px; margin: 0 auto; }
-.blog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.blog-title { font-size: 1.55rem; font-weight: 700; color: var(--text-primary); margin: 0; }
-.blog-subtitle { font-size: .85rem; color: var(--text-muted); margin: 2px 0 0; }
-
-.blog-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 18px; border-radius: var(--r-sm); font-size: .85rem; font-weight: 600;
-  border: none; cursor: pointer; transition: all var(--t-fast);
-}
-.blog-btn-primary {
-  background: var(--gold); color: #fff;
-}
-.blog-btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
-
-.blog-tabs {
-  display: flex; gap: 4px; margin-bottom: 16px;
-  background: var(--bg-elevated); border-radius: var(--r-sm); padding: 4px; width: fit-content;
-}
-.blog-tab {
-  padding: 6px 16px; border-radius: 8px; font-size: .82rem; font-weight: 500;
-  border: none; background: transparent; color: var(--text-secondary); cursor: pointer;
-  transition: all var(--t-fast);
-}
-.blog-tab.active { background: var(--gold); color: #fff; }
-.blog-tab:not(.active):hover { background: var(--bg-overlay); }
-
-.blog-loading, .blog-empty {
-  text-align: center; padding: 60px 20px; color: var(--text-muted);
-}
-.blog-empty svg { margin-bottom: 12px; opacity: .5; }
-.blog-empty p { margin: 0; }
-
-.blog-table-wrap {
-  background: var(--bg-surface); border-radius: var(--r-md);
-  box-shadow: var(--shadow-sm); overflow: hidden;
-}
-.blog-table { width: 100%; border-collapse: collapse; }
-.blog-table th {
-  font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--text-muted); padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border-subtle);
-}
-.blog-table td {
-  padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); vertical-align: middle;
-  font-size: .85rem; color: var(--text-primary);
-}
-.blog-table tr:last-child td { border-bottom: none; }
-.blog-row { cursor: pointer; }
-.blog-table tbody tr:hover { background: var(--bg-elevated); }
-
-.blog-cover-thumb {
-  width: 42px; height: 42px; border-radius: 8px; object-fit: cover;
-  border: 1px solid var(--border-subtle);
-}
-.blog-cover-placeholder {
-  width: 42px; height: 42px; border-radius: 8px;
-  background: var(--bg-elevated); display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border-subtle);
-}
-
-.blog-title-link {
-  font-weight: 600; color: var(--text-primary); cursor: pointer;
-  transition: color var(--t-fast);
-}
-.blog-title-link:hover { color: var(--gold); }
-.blog-slug { display: block; font-size: .75rem; color: var(--text-muted); margin-top: 2px; }
-
-.blog-badge {
-  font-size: .72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px;
-  text-transform: capitalize;
-}
-.blog-badge.published { background: var(--mint-soft); color: var(--mint-deep); }
-.blog-badge.draft { background: var(--lemon-soft); color: var(--lemon-deep); }
-
-.blog-tags-cell { font-size: .8rem; color: var(--text-secondary); }
-.blog-date-cell { font-size: .8rem; color: var(--text-secondary); white-space: nowrap; }
-
-.blog-actions { display: flex; gap: 6px; }
-.blog-action-btn {
-  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-subtle);
-  background: var(--bg-surface); cursor: pointer; display: flex; align-items: center; justify-content: center;
-  color: var(--text-secondary); transition: all var(--t-fast);
-}
-.blog-action-btn:hover { background: var(--bg-elevated); color: var(--gold); border-color: var(--gold); }
-.blog-action-btn.danger:hover { color: var(--red); border-color: var(--red); }
-.blog-action-btn:disabled { opacity: .4; pointer-events: none; }
-
-.blog-pagination {
-  display: flex; align-items: center; justify-content: center; gap: 16px;
-  margin-top: 20px; font-size: .85rem; color: var(--text-secondary);
-}
-.blog-pagination button {
-  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border-default);
-  background: var(--bg-surface); cursor: pointer; font-size: .82rem; color: var(--text-primary);
-  transition: all var(--t-fast);
-}
-.blog-pagination button:hover:not(:disabled) { background: var(--bg-elevated); border-color: var(--gold); }
-.blog-pagination button:disabled { opacity: .4; cursor: default; }
-`;

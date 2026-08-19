@@ -1,24 +1,30 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import { isAuthenticated } from './lib/auth';
 import { Layout } from './components/Layout';
 
-import Login            from './pages/Login';
-import Dashboard        from './pages/Dashboard';
-import Analytics        from './pages/Analytics';
-import Templates        from './pages/Templates';
-import TemplateForm     from './pages/TemplateForm';
-import Users            from './pages/Users';
-import UserDetail       from './pages/UserDetail';
-import Transactions     from './pages/Transactions';
-import TransactionDetail from './pages/TransactionDetail';
-import Coupons          from './pages/Coupons';
-import Tickets          from './pages/Tickets';
-import TicketDetail     from './pages/TicketDetail';
-import Assets           from './pages/Assets';
-import Reviews          from './pages/Reviews';
-import BlogPosts        from './pages/BlogPosts';
-import BlogEditor       from './pages/BlogEditor';
+// Login and Dashboard stay in the main bundle — they are the first paint on
+// every session, so splitting them would only add a round trip.
+import Login     from './pages/Login';
+import Dashboard from './pages/Dashboard';
+
+// Everything else is fetched on first visit. TemplateForm, BlogEditor and
+// UserDetail alone are ~2,800 lines that most sessions never open.
+const Analytics          = lazy(() => import('./pages/Analytics'));
+const Templates          = lazy(() => import('./pages/Templates'));
+const TemplateForm       = lazy(() => import('./pages/TemplateForm'));
+const Users              = lazy(() => import('./pages/Users'));
+const UserDetail         = lazy(() => import('./pages/UserDetail'));
+const Transactions       = lazy(() => import('./pages/Transactions'));
+const TransactionDetail  = lazy(() => import('./pages/TransactionDetail'));
+const Coupons            = lazy(() => import('./pages/Coupons'));
+const Tickets            = lazy(() => import('./pages/Tickets'));
+const TicketDetail       = lazy(() => import('./pages/TicketDetail'));
+const Assets             = lazy(() => import('./pages/Assets'));
+const Reviews            = lazy(() => import('./pages/Reviews'));
+const BlogPosts          = lazy(() => import('./pages/BlogPosts'));
+const BlogEditor         = lazy(() => import('./pages/BlogEditor'));
 
 function ProtectedRoute({ children }) {
   const location = useLocation();
@@ -26,6 +32,11 @@ function ProtectedRoute({ children }) {
   // Preserve the page the admin was heading to so login can return there.
   const next = location.pathname + location.search;
   return <Navigate to={next && next !== '/' ? `/?next=${encodeURIComponent(next)}` : '/'} replace />;
+}
+
+/** Shown only while a route chunk downloads — keeps the shell on screen. */
+function RouteFallback() {
+  return <div className="spinner-wrap"><div className="spinner" /></div>;
 }
 
 export default function App() {
@@ -41,22 +52,22 @@ export default function App() {
             </ProtectedRoute>
           }>
             <Route path="dashboard"              element={<Dashboard />} />
-            <Route path="analytics"              element={<Analytics />} />
-            <Route path="templates"              element={<Templates />} />
-            <Route path="templates/new"          element={<TemplateForm />} />
-            <Route path="templates/:id/edit"     element={<TemplateForm />} />
-            <Route path="assets"                 element={<Assets />} />
-            <Route path="users"                  element={<Users />} />
-            <Route path="users/:id"              element={<UserDetail />} />
-            <Route path="transactions"           element={<Transactions />} />
-            <Route path="transactions/:id"       element={<TransactionDetail />} />
-            <Route path="coupons"                element={<Coupons />} />
-            <Route path="tickets"                element={<Tickets />} />
-            <Route path="tickets/:id"            element={<TicketDetail />} />
-            <Route path="reviews"                element={<Reviews />} />
-            <Route path="blog"                   element={<BlogPosts />} />
-            <Route path="blog/new"               element={<BlogEditor />} />
-            <Route path="blog/:id/edit"          element={<BlogEditor />} />
+            <Route path="analytics"              element={<Suspense fallback={<RouteFallback />}><Analytics /></Suspense>} />
+            <Route path="templates"              element={<Suspense fallback={<RouteFallback />}><Templates /></Suspense>} />
+            <Route path="templates/new"          element={<Suspense fallback={<RouteFallback />}><TemplateForm /></Suspense>} />
+            <Route path="templates/:id/edit"     element={<Suspense fallback={<RouteFallback />}><TemplateForm /></Suspense>} />
+            <Route path="assets"                 element={<Suspense fallback={<RouteFallback />}><Assets /></Suspense>} />
+            <Route path="users"                  element={<Suspense fallback={<RouteFallback />}><Users /></Suspense>} />
+            <Route path="users/:id"              element={<Suspense fallback={<RouteFallback />}><UserDetail /></Suspense>} />
+            <Route path="transactions"           element={<Suspense fallback={<RouteFallback />}><Transactions /></Suspense>} />
+            <Route path="transactions/:id"       element={<Suspense fallback={<RouteFallback />}><TransactionDetail /></Suspense>} />
+            <Route path="coupons"                element={<Suspense fallback={<RouteFallback />}><Coupons /></Suspense>} />
+            <Route path="tickets"                element={<Suspense fallback={<RouteFallback />}><Tickets /></Suspense>} />
+            <Route path="tickets/:id"            element={<Suspense fallback={<RouteFallback />}><TicketDetail /></Suspense>} />
+            <Route path="reviews"                element={<Suspense fallback={<RouteFallback />}><Reviews /></Suspense>} />
+            <Route path="blog"                   element={<Suspense fallback={<RouteFallback />}><BlogPosts /></Suspense>} />
+            <Route path="blog/new"               element={<Suspense fallback={<RouteFallback />}><BlogEditor /></Suspense>} />
+            <Route path="blog/:id/edit"          element={<Suspense fallback={<RouteFallback />}><BlogEditor /></Suspense>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

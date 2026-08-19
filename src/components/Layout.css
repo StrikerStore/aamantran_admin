@@ -17,7 +17,12 @@
   position: fixed;
   top: 0; left: 0;
   z-index: 100;
-  transition: transform var(--t-base), width var(--t-base);
+  /* Only transform is animated. Transitioning `width` here (and `margin-left`
+     on .main) re-laid out the whole page every frame for 220ms — with a long
+     table on screen that was the most expensive animation in the app. The
+     desktop rail now snaps: one reflow instead of ~13. The mobile drawer still
+     slides, because transform is compositor-only and effectively free. */
+  transition: transform var(--t-base);
   box-shadow: 4px 0 20px rgba(108,92,231,0.08);
 }
 
@@ -178,7 +183,7 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
   color: var(--text-muted);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: all var(--t-fast);
+  transition: var(--t-ui);
   flex-shrink: 0;
 }
 
@@ -203,7 +208,7 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  transition: margin-left var(--t-base);
+  /* No margin-left transition — see the note on .sidebar above. */
 }
 
 /* ── Collapsed icon rail (desktop only) ── */
@@ -299,7 +304,7 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  transition: all var(--t-fast);
+  transition: var(--t-ui);
   flex-shrink: 0;
 }
 
@@ -408,6 +413,30 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
   gap: 16px;
   margin-bottom: 32px;
 }
+
+/* Dashboard two-column panels. Was an inline `1fr 1fr`, which squeezed both
+   tables side by side on phones with no way for a media query to intervene. */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 900px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
+
+.dash-error {
+  background: var(--peach-soft);
+  color: var(--peach-deep);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Value not in yet — dim the placeholder so it reads as pending, not as zero. */
+.stat-value-pending { opacity: 0.35; }
 
 .stat-card {
   background: linear-gradient(145deg, #ffffff 55%, var(--bg-elevated) 100%);
@@ -737,7 +766,7 @@ tbody tr.clickable { cursor: pointer; }
   cursor: pointer;
   color: var(--text-muted);
   font-size: 0.88rem;
-  transition: all var(--t-fast);
+  transition: var(--t-ui);
 }
 
 .file-drop:hover { border-color: var(--gold); color: var(--gold); background: var(--lav-soft); }

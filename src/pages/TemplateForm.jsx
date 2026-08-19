@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
@@ -44,11 +44,6 @@ function makePendingUploadId() {
 
 function emptyDemoFunctionRow(sortOrder = 0) {
   return { name: '', date: '', time: '', venueName: '', venueAddress: '', venueMapUrl: '', dressCode: '', sortOrder };
-}
-
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
 }
 
 // ── Helpers to humanize role names ───────────────────────────────────────────
@@ -113,10 +108,6 @@ export default function TemplateForm() {
   const [saving,  setSaving]  = useState(false);
   const [versionDeletingId, setVersionDeletingId] = useState(null);
   const [demoUrl, setDemoUrl] = useState(null);
-
-  useLayoutEffect(() => {
-    setTopbarTitle(isEdit ? 'Edit Template' : 'Add Template');
-  }, [isEdit]);
 
   useEffect(() => () => {
     pendingDemoObjectUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
@@ -1087,7 +1078,7 @@ export default function TemplateForm() {
                       {row.demoFiles.map((fileUrl, fi) => (
                         <div key={fi} style={{ position: 'relative', border: '1px solid var(--border-subtle)', borderRadius: 'var(--r-sm)', padding: 4, background: 'var(--bg-base)' }}>
                           {row.type === 'photo' || row.type === 'video' ? (
-                            <img src={resolvePublicUrl(fileUrl)} alt={`${row.key} demo ${fi + 1}`} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, display: 'block' }} />
+                            <img src={resolvePublicUrl(fileUrl)} alt={`${row.key} demo ${fi + 1}`} width="80" height="80" loading="lazy" decoding="async" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, display: 'block' }} />
                           ) : (
                             <div style={{ width: 80, height: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--text-muted)', gap: 4 }}>
                               <span style={{ fontSize: '1.4rem' }}>&#9835;</span>

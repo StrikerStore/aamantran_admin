@@ -1,46 +1,49 @@
-import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { formatDate, debounce } from '../lib/utils';
+import { formatDate } from '../lib/utils';
 import { Pagination } from '../components/ui/Pagination';
 import { useToast } from '../components/ui/Toast';
-
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
+import { useDebounced } from '../lib/useDebounced';
 
 export default function Users() {
   const navigate = useNavigate();
   const toast    = useToast();
 
-  const [users,   setUsers]   = useState([]);
-  const [total,   setTotal]   = useState(0);
-  const [page,    setPage]    = useState(1);
-  const [search,  setSearch]  = useState('');
-  const [loading, setLoading] = useState(true);
+  const [users,      setUsers]      = useState([]);
+  const [total,      setTotal]      = useState(0);
+  const [page,       setPage]       = useState(1);
+  const [search,     setSearch]     = useState('');
+  const [loading,    setLoading]    = useState(true);  // first load only
+  const [refreshing, setRefreshing] = useState(false); // subsequent fetches
+  const loadedOnce = useRef(false);
 
-  useLayoutEffect(() => { setTopbarTitle('Users'); }, []);
-
-  const load = useCallback(async (q, p) => {
-    setLoading(true);
-    try {
-      const res = await api.users.list({ search: q || undefined, page: p, limit: 20 });
-      setUsers(res.data);
-      setTotal(res.total);
-    } catch (err) {
-      toast(err.message, 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSearch = useCallback(debounce((q, p) => load(q, p), 320), [load]);
+  // Only the search term is debounced; page changes fire immediately.
+  const debouncedSearch = useDebounced(search, 320);
 
   useEffect(() => {
-    debouncedSearch(search, page);
-  }, [search, page, debouncedSearch]);
+    const ctrl = new AbortController();
+    if (loadedOnce.current) setRefreshing(true);
+
+    api.users
+      .list({ search: debouncedSearch || undefined, page, limit: 20 }, { signal: ctrl.signal })
+      .then((res) => {
+        setUsers(res.data);
+        setTotal(res.total);
+        loadedOnce.current = true;
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (err?.name === 'AbortError') return; // superseded by a newer query
+        toast(err.message, 'error');
+        setLoading(false);
+      })
+      .finally(() => setRefreshing(false));
+
+    // Cancel in flight when the query changes or the page unmounts, so a slow
+    // early response can never overwrite a newer one.
+    return () => ctrl.abort();
+  }, [debouncedSearch, page, toast]);
 
   return (
     <div>
@@ -66,8 +69,9 @@ export default function Users() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="table-container">
+      {/* Table — rows stay on screen while a new query loads */}
+      {refreshing && <div className="refresh-bar" />}
+      <div className={`table-container${refreshing ? ' is-refreshing' : ''}`}>
         {loading ? (
           <div className="spinner-wrap"><div className="spinner" /></div>
         ) : users.length === 0 ? (

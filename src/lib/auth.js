@@ -1,5 +1,7 @@
 /** Auth helpers — token storage, decode, guard hook */
 
+import { clearApiCache } from './api';
+
 const TOKEN_KEY = 'aam_admin_token';
 
 function decodeJWT(token) {
@@ -15,11 +17,14 @@ function isExpired(token) {
 }
 
 export function saveToken(token) {
+  // Drop anything the previous session left in memory before the new one starts.
+  clearApiCache();
   localStorage.setItem(TOKEN_KEY, token);
 }
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  clearApiCache(); // signing out must not leave admin data readable in memory
 }
 
 export function getToken() {

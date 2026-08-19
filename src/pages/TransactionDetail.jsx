@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatCurrency, formatDateTime } from '../lib/utils';
@@ -6,11 +6,6 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
-
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
 
 export default function TransactionDetail() {
   const navigate = useNavigate();
@@ -21,8 +16,6 @@ export default function TransactionDetail() {
   const [loading,  setLoading]  = useState(true);
   const [confirm,  setConfirm]  = useState(false);
   const [refunding, setRefunding] = useState(false);
-
-  useLayoutEffect(() => { setTopbarTitle('Transaction Detail'); }, []);
 
   useEffect(() => {
     api.transactions.get(id)

@@ -1,15 +1,10 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { formatDateTime, formatRelative } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
-
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
 
 export default function TicketDetail() {
   const navigate  = useNavigate();
@@ -22,8 +17,6 @@ export default function TicketDetail() {
   const [reply,    setReply]    = useState('');
   const [sending,  setSending]  = useState(false);
   const [acting,   setActing]   = useState(false);
-
-  useLayoutEffect(() => { setTopbarTitle('Support Ticket'); }, []);
 
   const load = () => {
     api.tickets.get(id)

@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
@@ -15,11 +15,6 @@ import { Modal, ConfirmModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import { AdminInviteModal, EditEventModal } from './InvitationModals';
 
-function setTopbarTitle(t) {
-  const el = document.getElementById('topbar-title-slot');
-  if (el) el.textContent = t;
-}
-
 export default function UserDetail() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -27,6 +22,8 @@ export default function UserDetail() {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadedOnce = useRef(false);
 
   const [phoneEdit, setPhoneEdit] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -38,17 +35,22 @@ export default function UserDetail() {
   const [inviteGenOpen, setInviteGenOpen] = useState(false);
   const [swapPairedOpen, setSwapPairedOpen] = useState(false);
 
-  useLayoutEffect(() => { setTopbarTitle('User Detail'); }, []);
-
+  // load() also runs after mutations to pull fresh data. Blanking the whole
+  // detail page each time was jarring, so only the very first load shows the
+  // spinner — later refreshes dim the existing content in place.
   const load = () => {
-    setLoading(true);
+    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
     api.users.get(id)
       .then((res) => {
         setUser(res.data);
         setPhoneEdit(res.data.phone || '');
+        loadedOnce.current = true;
       })
       .catch((err) => toast(err.message, 'error'))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+      });
   };
 
   useEffect(() => { load(); }, [id]); // eslint-disable-line
@@ -76,7 +78,7 @@ export default function UserDetail() {
   if (!user) return <div className="empty-state"><div className="empty-text">User not found</div></div>;
 
   return (
-    <div>
+    <div className={refreshing ? 'is-refreshing' : undefined}>
       <div className="breadcrumb">
         <a href="#" onClick={(e) => { e.preventDefault(); navigate('/users'); }}>Users</a>
         <span className="breadcrumb-sep">›</span>

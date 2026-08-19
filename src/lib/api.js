@@ -14,8 +14,36 @@ class ApiError extends Error {
   }
 }
 
-async function request(method, path, { body, multipart = false, params } = {}) {
+/* ── GET cache ───────────────────────────────────────────────────────────────
+ * Makes back-navigation feel instant instead of re-fetching from scratch.
+ *
+ * Security constraints this deliberately honours:
+ *  - Memory only. Admin payloads (users, transactions, tickets) must never be
+ *    written to localStorage/sessionStorage where they outlive the session.
+ *  - Bound to the exact token that fetched them. A different admin signing in
+ *    gets a different key, so one admin can never read another's cached rows.
+ *  - Dropped wholesale on logout, on 401, and after any mutation.
+ *  - GET only — never replays a POST/PATCH/DELETE.
+ */
+const CACHE_TTL_MS = 30_000;
+const getCache = new Map();
+
+function cacheKey(token, path, params) {
+  return `${token || 'anon'}|${path}|${params ? JSON.stringify(params) : ''}`;
+}
+
+export function clearApiCache() {
+  getCache.clear();
+}
+
+async function request(method, path, { body, multipart = false, params, cache = false, signal } = {}) {
   const token = localStorage.getItem('aam_admin_token');
+
+  const key = cache && method === 'GET' ? cacheKey(token, path, params) : null;
+  if (key) {
+    const hit = getCache.get(key);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
+  }
 
   const url = API_BASE.startsWith('http')
     ? new URL(`${API_BASE}${path}`)
@@ -39,8 +67,11 @@ async function request(method, path, { body, multipart = false, params } = {}) {
 
   let res;
   try {
-    res = await fetch(url.toString(), { method, headers, body: fetchBody });
-  } catch {
+    res = await fetch(url.toString(), { method, headers, body: fetchBody, signal });
+  } catch (err) {
+    // A superseded request (user kept typing) is not a failure — let callers
+    // ignore it rather than flashing a network error toast.
+    if (err?.name === 'AbortError') throw err;
     throw new ApiError('Network error — is the backend running?', 0, null);
   }
 
@@ -58,6 +89,7 @@ async function request(method, path, { body, multipart = false, params } = {}) {
     const msg = json?.message || 'Session expired — please sign in again.';
     const hadToken = !!localStorage.getItem('aam_admin_token');
     localStorage.removeItem('aam_admin_token');
+    clearApiCache(); // never let a revoked session's data survive in memory
     // Only hard-redirect when a session was active (e.g. expired token mid-session).
     // On the login page itself there is no token yet, so just throw and let the
     // form's catch block display the error inline.
@@ -69,6 +101,11 @@ async function request(method, path, { body, multipart = false, params } = {}) {
   }
 
   if (!res.ok) throw new ApiError(json?.message || `Request failed (${res.status})`, res.status, json);
+
+  if (key) getCache.set(key, { at: Date.now(), value: json });
+  // Any write can invalidate any list, so drop everything rather than guess.
+  if (method !== 'GET') clearApiCache();
+
   return json;
 }
 
@@ -79,8 +116,8 @@ export const api = {
   },
 
   templates: {
-    list:          (params)   => request('GET',    '/templates', { params }),
-    get:           (id)       => request('GET',    `/templates/${id}`),
+    list:          (params)   => request('GET',    '/templates', { params, cache: true }),
+    get:           (id)       => request('GET',    `/templates/${id}`, { cache: true }),
     create:        (fd)       => request('POST',   '/templates', { body: fd, multipart: true }),
     update:        (id, fd)   => request('PUT',    `/templates/${id}`, { body: fd, multipart: true }),
     updateFiles:   (id, fd)   => request('PUT',    `/templates/${id}/files`, { body: fd, multipart: true }),
@@ -97,8 +134,8 @@ export const api = {
   },
 
   users: {
-    list:           (params)        => request('GET',   '/users', { params }),
-    get:            (id)            => request('GET',   `/users/${id}`),
+    list:           (params, opts)  => request('GET',   '/users', { params, cache: true, ...opts }),
+    get:            (id)            => request('GET',   `/users/${id}`, { cache: true }),
     updateProfile:  (id, body)      => request('PATCH', `/users/${id}/profile`, { body }),
     resetPassword:  (id, password)  => request('PATCH', `/users/${id}/reset-password`, { body: { password } }),
     freezeNames:    (id, eventId)   => request('PATCH', `/users/${id}/freeze-names`, { body: { eventId } }),
@@ -117,28 +154,28 @@ export const api = {
   },
 
   transactions: {
-    list:   (params) => request('GET',  '/transactions', { params }),
-    get:    (id)     => request('GET',  `/transactions/${id}`),
+    list:   (params) => request('GET',  '/transactions', { params, cache: true }),
+    get:    (id)     => request('GET',  `/transactions/${id}`, { cache: true }),
     refund: (id)     => request('POST', `/transactions/${id}/refund`),
   },
 
   tickets: {
-    list:    (params)        => request('GET',   '/tickets', { params }),
-    get:     (id)            => request('GET',   `/tickets/${id}`),
+    list:    (params)        => request('GET',   '/tickets', { params, cache: true }),
+    get:     (id)            => request('GET',   `/tickets/${id}`, { cache: true }),
     reply:   (id, body)      => request('POST',  `/tickets/${id}/reply`, { body: { body } }),
     resolve: (id)            => request('PATCH', `/tickets/${id}/resolve`),
     reopen:  (id)            => request('PATCH', `/tickets/${id}/reopen`),
   },
 
   coupons: {
-    list:   ()                => request('GET', '/coupons'),
+    list:   (params)          => request('GET', '/coupons', { params, cache: true }),
     create: (body)            => request('POST', '/coupons', { body }),
     update: (id, body)        => request('PATCH', `/coupons/${id}`, { body }),
     remove: (id)              => request('DELETE', `/coupons/${id}`),
   },
 
   assets: {
-    list:   ()     => request('GET', '/assets'),
+    list:   (params) => request('GET', '/assets', { params, cache: true }),
     upload: (fd)   => request('POST', '/assets', { body: fd, multipart: true }),
     remove: (id)   => request('DELETE', `/assets/${id}`),
   },
@@ -149,7 +186,7 @@ export const api = {
   },
 
   reviews: {
-    list:   (params) => request('GET',    '/reviews', { params }),
+    list:   (params) => request('GET',    '/reviews', { params, cache: true }),
     create: (fd)     => request('POST',   '/reviews', { body: fd, multipart: true }),
     hide:   (id)     => request('PATCH',  `/reviews/${id}/hide`),
     show:   (id)     => request('PATCH',  `/reviews/${id}/show`),
@@ -157,8 +194,8 @@ export const api = {
   },
 
   blog: {
-    list:      (params) => request('GET',    '/blog', { params }),
-    get:       (id)     => request('GET',    `/blog/${id}`),
+    list:      (params) => request('GET',    '/blog', { params, cache: true }),
+    get:       (id)     => request('GET',    `/blog/${id}`, { cache: true }),
     create:    (fd)     => request('POST',   '/blog', { body: fd, multipart: true }),
     update:    (id, fd) => request('PUT',    `/blog/${id}`, { body: fd, multipart: true }),
     publish:   (id)     => request('PATCH',  `/blog/${id}/publish`),

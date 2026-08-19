@@ -86,11 +86,12 @@ export default function Login() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <img
-            src="/logo.png"
+            src="/logo-180.png"
             alt=""
             width={56}
             height={56}
             decoding="async"
+            fetchPriority="high"
             style={{ display: 'block', margin: '0 auto 12px', objectFit: 'contain' }}
           />
           <div style={{
