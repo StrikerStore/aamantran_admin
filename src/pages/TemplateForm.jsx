@@ -7,6 +7,7 @@ import { getInviteBaseUrl } from '../lib/config';
 import { formatCurrency } from '../lib/utils';
 import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES } from '../lib/constants';
 import { Button } from '../components/ui/Button';
+import { CollapsibleCard } from '../components/ui/CollapsibleCard';
 import { useToast } from '../components/ui/Toast';
 import { toHtmlDateInputValue } from '../utils/dateNormalize';
 
@@ -890,9 +891,7 @@ export default function TemplateForm() {
             ═══════════════════════════════════════════════════════════════════════ */}
 
         {/* ── People / Roles ── */}
-        <div className="card" style={sectionCard}>
-          <div className="card-header"><span className="card-title">Field Schema — People</span></div>
-          <div className="card-body">
+        <CollapsibleCard title="Field Schema — People" defaultOpen style={sectionCard}>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
               Define the people/roles this template needs. Each role becomes a field in the invitation form.
               The <strong>role</strong> is what your HTML uses (e.g. <code>bride</code> → <code>{'{{bride_name}}'}</code>).
@@ -936,13 +935,10 @@ export default function TemplateForm() {
               </div>
             ))}
             <Button type="button" size="sm" variant="secondary" onClick={addPerson} style={{ marginTop: 4 }}>+ Add person</Button>
-          </div>
-        </div>
+        </CollapsibleCard>
 
         {/* ── Custom Fields ── */}
-        <div className="card" style={sectionCard}>
-          <div className="card-header"><span className="card-title">Field Schema — Custom Fields</span></div>
-          <div className="card-body">
+        <CollapsibleCard title="Field Schema — Custom Fields" defaultOpen style={sectionCard}>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
               Extra template-specific fields (love story, hashtag, thank-you note, etc.).
               The <strong>key</strong> becomes <code>{'{{key}}'}</code> in your HTML.
@@ -1004,13 +1000,10 @@ export default function TemplateForm() {
               </div>
             ))}
             <Button type="button" size="sm" variant="secondary" onClick={addCustomField} style={{ marginTop: 4 }}>+ Add custom field</Button>
-          </div>
-        </div>
+        </CollapsibleCard>
 
         {/* ── Media slots (drives user + admin upload UI) ── */}
-        <div className="card" style={sectionCard}>
-          <div className="card-header"><span className="card-title">Field Schema — Media slots</span></div>
-          <div className="card-body">
+        <CollapsibleCard title="Field Schema — Media slots" defaultOpen style={sectionCard}>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
               Optional. When set, the couple dashboard and admin editor show one block per slot (upload or URL).
               Use stable keys such as <code>ganesh</code>, <code>background_music</code>, <code>couple_carousel</code>, <code>family_photo</code>.
@@ -1175,13 +1168,10 @@ export default function TemplateForm() {
               </div>
             ))}
             <Button type="button" size="sm" variant="secondary" onClick={addMediaSlot} style={{ marginTop: 4 }}>+ Add media slot</Button>
-          </div>
-        </div>
+        </CollapsibleCard>
 
         {/* ── Function Fields Config ── */}
-        <div className="card" style={sectionCard}>
-          <div className="card-header"><span className="card-title">Field Schema — Function/Event Fields</span></div>
-          <div className="card-body">
+        <CollapsibleCard title="Field Schema — Function/Event Fields" defaultOpen style={sectionCard}>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
               Choose which fields each function/sub-event should have in the invitation form.
               Name and Date are always enabled.
@@ -1204,13 +1194,10 @@ export default function TemplateForm() {
                 );
               })}
             </div>
-          </div>
-        </div>
+        </CollapsibleCard>
 
         {/* ── Demo Functions ── */}
-        <div className="card" style={sectionCard}>
-          <div className="card-header"><span className="card-title">Demo Data — Functions</span></div>
-          <div className="card-body">
+        <CollapsibleCard title="Demo Data — Functions" defaultOpen style={sectionCard}>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
               Sample functions for the template demo preview. Only enabled fields from above are shown.
             </p>
@@ -1271,26 +1258,20 @@ export default function TemplateForm() {
               </div>
             ))}
             <Button type="button" size="sm" variant="secondary" onClick={addDemoFunction} style={{ marginTop: 4 }}>+ Add function</Button>
-          </div>
-        </div>
+        </CollapsibleCard>
 
         {/* ── Other Demo Data ── */}
-        <div className="card" style={sectionCard}>
-          <div className="card-header"><span className="card-title">Demo Data — Other</span></div>
-          <div className="card-body">
+        <CollapsibleCard title="Demo Data — Other" defaultOpen style={sectionCard}>
             <div className="form-group">
               <label className="form-label">Language</label>
               <Select className="form-select" value={demoLanguage} onChange={e => setDemoLanguage(e.target.value)}>
                 {LANGUAGES.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}
               </Select>
             </div>
-          </div>
-        </div>
+        </CollapsibleCard>
 
         {/* ── Links & Guests Demo Data ── */}
-        <div className="card" style={sectionCard}>
-          <div className="card-header"><span className="card-title">Demo Data — Links &amp; Guests</span></div>
-          <div className="card-body">
+        <CollapsibleCard title={'Demo Data — Links & Guests'} defaultOpen style={sectionCard}>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
               Social links and guest features shown in the demo preview. Leave links blank if the template does not use them.
             </p>
@@ -1318,8 +1299,7 @@ export default function TemplateForm() {
                 Guest notes / wishes enabled
               </label>
             </div>
-          </div>
-        </div>
+        </CollapsibleCard>
 
         {/* ── Actions ── */}
         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingBottom: 40, flexWrap: 'wrap' }}>

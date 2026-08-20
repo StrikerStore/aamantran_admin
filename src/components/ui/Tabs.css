@@ -1,0 +1,55 @@
+/* Segmented tabs with a sliding indicator.
+   Grid (not flex) so every tab is exactly 1/n of the track — the indicator
+   maths depends on equal columns. */
+.tabs {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  padding: 4px;
+  width: fit-content;
+  background: var(--bg-elevated);
+  border-radius: var(--r-sm);
+}
+
+/* The only animated thing, and it is transform-only, so it stays on the
+   compositor and never triggers layout. */
+.tabs-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / var(--tab-count));
+  border-radius: 8px;
+  background: var(--gold);
+  box-shadow: var(--shadow-clay-sm);
+  transform: translateX(calc(var(--tab-index) * 100%));
+  transition: transform var(--t-tab);
+  pointer-events: none;
+}
+
+.tabs-tab {
+  position: relative;
+  z-index: 1; /* above the indicator */
+  padding: 6px 16px;
+  min-width: 92px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--t-fast);
+}
+
+.tabs-tab:hover:not(.is-selected) { color: var(--text-primary); }
+.tabs-tab.is-selected { color: #fff; }
+
+.tabs-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

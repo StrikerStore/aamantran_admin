@@ -13,17 +13,6 @@
 }
 .blog-btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
-.blog-tabs {
-  display: flex; gap: 4px; margin-bottom: 16px;
-  background: var(--bg-elevated); border-radius: var(--r-sm); padding: 4px; width: fit-content;
-}
-.blog-tab {
-  padding: 6px 16px; border-radius: 8px; font-size: .82rem; font-weight: 500;
-  border: none; background: transparent; color: var(--text-secondary); cursor: pointer;
-  transition: var(--t-ui);
-}
-.blog-tab.active { background: var(--gold); color: #fff; }
-.blog-tab:not(.active):hover { background: var(--bg-overlay); }
 
 .blog-loading, .blog-empty {
   text-align: center; padding: 60px 20px; color: var(--text-muted);

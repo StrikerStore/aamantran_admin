@@ -1,0 +1,62 @@
+/* Collapsible card body.
+   `grid-template-rows: 0fr -> 1fr` is the whole animation. It interpolates
+   without anyone measuring a height, so no JS and no forced reflow. */
+
+.collapsible-header { padding: 0; }
+
+.collapsible-trigger {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* Matches .card-header's original padding — the button replaces it as the
+     padded element so the whole header row is clickable. */
+  padding: 20px 24px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition: background-color var(--t-fast);
+}
+
+.collapsible-trigger:hover { background: var(--bg-elevated); }
+
+.collapsible-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+.collapsible-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform var(--t-accordion);
+}
+.collapsible-card.is-open .collapsible-chevron { transform: rotate(180deg); }
+
+/* Header keeps its divider only while the body is showing. */
+.collapsible-card > .collapsible-header { border-bottom-color: transparent; }
+.collapsible-card.is-open > .collapsible-header { border-bottom-color: var(--border-subtle); }
+
+.collapsible-region {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-accordion);
+}
+.collapsible-card.is-open > .collapsible-region { grid-template-rows: 1fr; }
+
+.collapsible-inner {
+  overflow: hidden;
+  min-height: 0; /* required, or the grid row refuses to shrink below content */
+  /* Keeps collapsed content out of the tab order. Delayed on the way out so it
+     stays visible for the duration of the close animation. */
+  visibility: hidden;
+  transition: visibility 0s linear var(--t-accordion-ms);
+}
+.collapsible-card.is-open > .collapsible-region > .collapsible-inner {
+  visibility: visible;
+  transition-delay: 0s;
+}

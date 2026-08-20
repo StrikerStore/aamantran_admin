@@ -129,7 +129,10 @@ export function Layout() {
                   to={item.to}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   onClick={() => setSidebarOpen(false)}
-                  title={item.label}
+                  /* Styled CSS tooltip instead of `title`: the native one has a
+                     ~1s delay, cannot be themed, and would double up with ours.
+                     The label stays in the DOM for assistive tech either way. */
+                  data-tooltip={item.label}
                 >
                   <item.icon />
                   <span>{item.label}</span>
@@ -149,7 +152,14 @@ export function Layout() {
               <div className="sidebar-user-name">{username}</div>
               <div className="sidebar-user-email">{info?.email || ''}</div>
             </div>
-            <button className="sidebar-logout-btn" onClick={handleLogout} title="Sign out">
+            {/* aria-label carries the accessible name now that `title` is gone;
+                the icon alone gives screen readers nothing. */}
+            <button
+              className="sidebar-logout-btn"
+              onClick={handleLogout}
+              aria-label="Sign out"
+              data-tooltip="Sign out"
+            >
               <IconLogout />
             </button>
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useToast } from '../components/ui/Toast';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
+import { Tabs } from '../components/ui/Tabs';
 import './BlogPosts.css';
 
 const STATUS_TABS = [
@@ -86,16 +87,13 @@ export default function BlogPosts() {
       </div>
 
       {/* Status tabs */}
-      <div className="blog-tabs">
-        {STATUS_TABS.map(t => (
-          <button
-            key={t.key}
-            className={`blog-tab ${status === t.key ? 'active' : ''}`}
-            onClick={() => { setStatus(t.key); setPage(1); }}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div style={{ marginBottom: 16 }}>
+        <Tabs
+          tabs={STATUS_TABS}
+          value={status}
+          onChange={(key) => { setStatus(key); setPage(1); }}
+          ariaLabel="Filter posts by status"
+        />
       </div>
 
       {/* Posts table — rows stay visible while a tab/page change loads */}

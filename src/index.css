@@ -65,6 +65,17 @@
      space runs out instead of being visibly clipped mid-word. */
   --t-collapse-label: 150ms cubic-bezier(0.4, 0, 1, 1);
 
+  /* Sliding tab indicator — transform only, so it stays on the compositor. */
+  --t-tab: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Accordion open/close. --t-accordion-ms repeats the duration on its own
+     because `transition-delay` needs a bare time value, not a full shorthand. */
+  --t-accordion: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  --t-accordion-ms: 260ms;
+
+  /* Tooltips: quick in, no travel — opacity plus a few px of transform. */
+  --t-tooltip: 120ms ease-out;
+
   /* Standard interactive transition. Use this instead of `transition: all`,
      which also animates layout properties (width, padding, font-size) and
      forces a reflow per frame. Every property below is paint or composite. */
