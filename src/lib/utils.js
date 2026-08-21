@@ -57,6 +57,10 @@ export const STATUS_CLASS = {
   refunded: 'badge-refunded',
   open:     'badge-open',
   resolved: 'badge-resolved',
+  // Invitation publish state — distinct wording from a template's active/draft
+  // so the Testing page can show both badges side by side without ambiguity.
+  published:   'badge-active',
+  unpublished: 'badge-draft',
 };
 
 export function statusLabel(status) {

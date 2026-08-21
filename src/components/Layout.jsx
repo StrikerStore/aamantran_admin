@@ -28,6 +28,7 @@ const TITLES = [
   [/^\/blog\/new/,                'New Post'],
   [/^\/blog\/[^/]+\/edit/,        'Edit Post'],
   [/^\/blog/,                     'Blog'],
+  [/^\/testing/,                  'Testing'],
 ];
 
 function titleForPath(pathname) {
@@ -68,6 +69,10 @@ const NAV = [
   {
     section: 'Support',
     items: [{ label: 'Support Tickets', to: '/tickets', icon: IconMail, badge: true }],
+  },
+  {
+    section: 'Internal',
+    items: [{ label: 'Testing', to: '/testing', icon: IconFlask }],
   },
 ];
 
@@ -270,6 +275,14 @@ function IconChart() {
     <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
       <line x1="2" y1="20" x2="22" y2="20"/>
+    </svg>
+  );
+}
+function IconFlask() {
+  return (
+    <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 2v6.5L4.5 18A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3L14 8.5V2"/>
+      <line x1="9" y1="2" x2="15" y2="2"/><line x1="7" y1="15" x2="17" y2="15"/>
     </svg>
   );
 }

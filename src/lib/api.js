@@ -185,6 +185,19 @@ export const api = {
     live:    ()       => request('GET', '/analytics/live'),
   },
 
+  // Master template-testing account. `status` is deliberately uncached — the
+  // 30s GET cache would show a stale template right after a load.
+  testing: {
+    status:         ()         => request('GET',  '/testing/status'),
+    ensureAccount:  (password) => request('POST', '/testing/account', { body: password ? { password } : {} }),
+    rotatePassword: (password) => request('POST', '/testing/rotate-password', { body: password ? { password } : {} }),
+    loadTemplate:   (body)     => request('POST', '/testing/load-template', { body }),
+    setPublished:   (publish)  => request('POST', '/testing/publish', { body: { publish } }),
+    repin:          (renderSource) => request('POST', '/testing/repin', { body: { renderSource } }),
+    session:        ()         => request('POST', '/testing/session'),
+    reset:          ()         => request('POST', '/testing/reset'),
+  },
+
   reviews: {
     list:   (params) => request('GET',    '/reviews', { params, cache: true }),
     create: (fd)     => request('POST',   '/reviews', { body: fd, multipart: true }),

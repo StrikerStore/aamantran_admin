@@ -16,6 +16,7 @@ export default function Users() {
   const [search,     setSearch]     = useState('');
   const [loading,    setLoading]    = useState(true);  // first load only
   const [refreshing, setRefreshing] = useState(false); // subsequent fetches
+  const [showTest,   setShowTest]   = useState(false);
   const loadedOnce = useRef(false);
 
   // Only the search term is debounced; page changes fire immediately.
@@ -26,7 +27,7 @@ export default function Users() {
     if (loadedOnce.current) setRefreshing(true);
 
     api.users
-      .list({ search: debouncedSearch || undefined, page, limit: 20 }, { signal: ctrl.signal })
+      .list({ search: debouncedSearch || undefined, page, limit: 20, includeTest: showTest ? 1 : undefined }, { signal: ctrl.signal })
       .then((res) => {
         setUsers(res.data);
         setTotal(res.total);
@@ -43,7 +44,7 @@ export default function Users() {
     // Cancel in flight when the query changes or the page unmounts, so a slow
     // early response can never overwrite a newer one.
     return () => ctrl.abort();
-  }, [debouncedSearch, page, toast]);
+  }, [debouncedSearch, page, showTest, toast]);
 
   return (
     <div>
@@ -67,6 +68,17 @@ export default function Users() {
             onChange={e => { setSearch(e.target.value); setPage(1); }}
           />
         </div>
+
+        {/* Hidden by default so the dashboard's "Registered Users" count, which
+            reads this endpoint's total, stays honest. */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <input
+            type="checkbox"
+            checked={showTest}
+            onChange={e => { setShowTest(e.target.checked); setPage(1); }}
+          />
+          Show test account
+        </label>
       </div>
 
       {/* Table — rows stay on screen while a new query loads */}
@@ -94,7 +106,16 @@ export default function Users() {
             <tbody>
               {users.map(u => (
                 <tr key={u.id} className="clickable" onClick={() => navigate(`/users/${u.id}`)}>
-                  <td className="td-primary" style={{ fontSize: '0.88rem' }}>{u.username || '—'}</td>
+                  <td className="td-primary" style={{ fontSize: '0.88rem' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                      {u.username || '—'}
+                      {u.isTestAccount && (
+                        <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.06em', padding: '2px 6px', borderRadius: 4, background: 'var(--lemon-soft)', color: 'var(--lemon-deep)' }}>
+                          TEST
+                        </span>
+                      )}
+                    </span>
+                  </td>
                   <td>
                     <div className="td-primary">{u.email}</div>
                   </td>
