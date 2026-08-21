@@ -186,7 +186,7 @@ export default function Testing() {
       </div>
 
       {/* ── Account ─────────────────────────────────────────────── */}
-      <div className="card mb-24">
+      <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-header">
           <span className="card-title">Test Account</span>
           {provisioned && <Badge status="active" />}
@@ -205,7 +205,7 @@ export default function Testing() {
             </Button>
           </div>
         ) : (
-          <div style={{ padding: '4px 0' }}>
+          <div className="card-body">
             <CopyField label="Username" value={state.user.username} />
             <CopyField label="Email"    value={state.user.email} />
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
@@ -229,7 +229,7 @@ export default function Testing() {
 
       {/* ── Current state ───────────────────────────────────────── */}
       {provisioned && (
-        <div className="card mb-24">
+        <div className="card" style={{ marginBottom: 24 }}>
           <div className="card-header">
             <span className="card-title">Currently Loaded</span>
             {event && <Badge status={event.isPublished ? 'published' : 'unpublished'} />}
@@ -244,7 +244,7 @@ export default function Testing() {
               </p>
             </div>
           ) : (
-            <div style={{ padding: '4px 0' }}>
+            <div className="card-body">
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
                 {event.template?.thumbnailUrl && (
                   <img
