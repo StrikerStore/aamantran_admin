@@ -101,7 +101,6 @@ export default function TemplateForm() {
   const [demoLanguage, setDemoLanguage]   = useState('en');
   const [demoInstagramUrl,     setDemoInstagramUrl]     = useState('');
   const [demoSocialYoutubeUrl, setDemoSocialYoutubeUrl] = useState('');
-  const [demoWebsiteUrl,       setDemoWebsiteUrl]       = useState('');
   const [demoRsvpEnabled,      setDemoRsvpEnabled]      = useState(true);
   const [demoGuestNotesEnabled, setDemoGuestNotesEnabled] = useState(true);
 
@@ -219,7 +218,6 @@ export default function TemplateForm() {
         setDemoLanguage(t.demoData.language || 'en');
         setDemoInstagramUrl(t.demoData.instagramUrl || '');
         setDemoSocialYoutubeUrl(t.demoData.socialYoutubeUrl || '');
-        setDemoWebsiteUrl(t.demoData.websiteUrl || '');
         setDemoRsvpEnabled(t.demoData.rsvpEnabled !== false);
         setDemoGuestNotesEnabled(t.demoData.guestNotesEnabled !== false);
       }
@@ -394,7 +392,6 @@ export default function TemplateForm() {
       language:      demoLanguage,
       instagram_url:       demoInstagramUrl     || null,
       social_youtube_url:  demoSocialYoutubeUrl || null,
-      website_url:         demoWebsiteUrl       || null,
       rsvp_enabled:        demoRsvpEnabled,
       guest_notes_enabled: demoGuestNotesEnabled,
       media_slot_demo_urls: mediaSlotDemoUrls,
@@ -1284,10 +1281,6 @@ export default function TemplateForm() {
                 <label className="form-label">YouTube URL</label>
                 <input className="form-input" value={demoSocialYoutubeUrl} onChange={e => setDemoSocialYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
               </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Website URL</label>
-              <input className="form-input" value={demoWebsiteUrl} onChange={e => setDemoWebsiteUrl(e.target.value)} placeholder="https://yourwebsite.com" />
             </div>
             <div style={{ display: 'flex', gap: 24, marginTop: 8 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.86rem', cursor: 'pointer' }}>
