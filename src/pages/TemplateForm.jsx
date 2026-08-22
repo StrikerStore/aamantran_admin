@@ -100,6 +100,7 @@ export default function TemplateForm() {
   const [demoFunctions, setDemoFunctions] = useState([emptyDemoFunctionRow(0)]);
   const [demoLanguage, setDemoLanguage]   = useState('en');
   const [demoInstagramUrl,     setDemoInstagramUrl]     = useState('');
+  const [demoInstagramHashtag, setDemoInstagramHashtag] = useState('');
   const [demoSocialYoutubeUrl, setDemoSocialYoutubeUrl] = useState('');
   const [demoRsvpEnabled,      setDemoRsvpEnabled]      = useState(true);
   const [demoGuestNotesEnabled, setDemoGuestNotesEnabled] = useState(true);
@@ -217,6 +218,7 @@ export default function TemplateForm() {
       if (t.demoData) {
         setDemoLanguage(t.demoData.language || 'en');
         setDemoInstagramUrl(t.demoData.instagramUrl || '');
+        setDemoInstagramHashtag(t.demoData.instagramHashtag || '');
         setDemoSocialYoutubeUrl(t.demoData.socialYoutubeUrl || '');
         setDemoRsvpEnabled(t.demoData.rsvpEnabled !== false);
         setDemoGuestNotesEnabled(t.demoData.guestNotesEnabled !== false);
@@ -391,6 +393,7 @@ export default function TemplateForm() {
       venue_address: demoFunctions[0]?.venueAddress || '',
       language:      demoLanguage,
       instagram_url:       demoInstagramUrl     || null,
+      hashtag:             demoInstagramHashtag.trim().replace(/^#+/, '') || null,
       social_youtube_url:  demoSocialYoutubeUrl || null,
       rsvp_enabled:        demoRsvpEnabled,
       guest_notes_enabled: demoGuestNotesEnabled,
@@ -1281,6 +1284,11 @@ export default function TemplateForm() {
                 <label className="form-label">YouTube URL</label>
                 <input className="form-input" value={demoSocialYoutubeUrl} onChange={e => setDemoSocialYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." />
               </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Instagram Hashtag</label>
+              <input className="form-input" value={demoInstagramHashtag} onChange={e => setDemoInstagramHashtag(e.target.value)} placeholder="PriyaWedsRahul" />
+              <div className="form-hint">Rendered as <code>{'{{hashtag}}'}</code> with a leading # — enter it without one.</div>
             </div>
             <div style={{ display: 'flex', gap: 24, marginTop: 8 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.86rem', cursor: 'pointer' }}>

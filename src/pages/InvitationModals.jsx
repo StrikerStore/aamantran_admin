@@ -396,6 +396,7 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
   const [slug, setSlug] = useState(ev.slug || '');
   const [language, setLang] = useState(ev.language || 'en');
   const [instagramUrl, setInstagramUrl] = useState(ev.instagramUrl || '');
+  const [instagramHashtag, setInstagramHashtag] = useState(ev.instagramHashtag || '');
   const [socialYoutubeUrl, setSocialYoutubeUrl] = useState(ev.socialYoutubeUrl || '');
   const [websiteUrl, setWebsiteUrl] = useState(ev.websiteUrl || '');
   const [rsvpEnabled, setRsvpEnabled] = useState(ev.rsvpEnabled !== false);
@@ -437,11 +438,12 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
 
   useEffect(() => {
     setInstagramUrl(ev.instagramUrl || '');
+    setInstagramHashtag(ev.instagramHashtag || '');
     setSocialYoutubeUrl(ev.socialYoutubeUrl || '');
     setWebsiteUrl(ev.websiteUrl || '');
     setRsvpEnabled(ev.rsvpEnabled !== false);
     setGuestNotesEnabled(ev.guestNotesEnabled !== false);
-  }, [ev.id, ev.instagramUrl, ev.socialYoutubeUrl, ev.websiteUrl, ev.rsvpEnabled, ev.guestNotesEnabled]);
+  }, [ev.id, ev.instagramUrl, ev.instagramHashtag, ev.socialYoutubeUrl, ev.websiteUrl, ev.rsvpEnabled, ev.guestNotesEnabled]);
 
   async function refreshAdminMedia() {
     const r = await api.users.get(userId);
@@ -497,6 +499,7 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
       await api.users.updateEventData(userId, {
         eventId: ev.id, brideName: d.bride, groomName: d.groom, eventType, community, slug, language,
         instagramUrl: instagramUrl.trim() || null,
+        instagramHashtag: instagramHashtag.trim().replace(/^#+/, '') || null,
         socialYoutubeUrl: socialYoutubeUrl.trim() || null,
         websiteUrl: websiteUrl.trim() || null,
         rsvpEnabled,
@@ -523,6 +526,10 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
       <div className="form-group">
         <label className="form-label">Instagram URL</label>
         <input className="form-input" type="url" value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/…" />
+      </div>
+      <div className="form-group">
+        <label className="form-label">Instagram Hashtag</label>
+        <input className="form-input" value={instagramHashtag} onChange={(e) => setInstagramHashtag(e.target.value)} placeholder="PriyaWedsRahul" />
       </div>
       <div className="form-group">
         <label className="form-label">YouTube URL</label>
