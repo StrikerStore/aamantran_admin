@@ -198,6 +198,15 @@ export const api = {
     reset:          ()         => request('POST', '/testing/reset'),
   },
 
+  // Template Lab accounts for external template developers.
+  developers: {
+    list:           ()                 => request('GET',    '/testing/developers'),
+    create:         (body)             => request('POST',   '/testing/developers', { body }),
+    rotatePassword: (handle, password) => request('POST',   `/testing/developers/${handle}/rotate-password`, { body: password ? { password } : {} }),
+    setActive:      (handle, isActive) => request('PATCH',  `/testing/developers/${handle}/active`, { body: { isActive } }),
+    remove:         (handle)           => request('DELETE', `/testing/developers/${handle}`),
+  },
+
   reviews: {
     list:   (params) => request('GET',    '/reviews', { params, cache: true }),
     create: (fd)     => request('POST',   '/reviews', { body: fd, multipart: true }),
