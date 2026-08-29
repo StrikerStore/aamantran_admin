@@ -20,6 +20,7 @@ export default function Coupons() {
   const [maxGlobalUses, setMaxGlobalUses] = useState('');
   const [maxUsesPerUser, setMaxUsesPerUser] = useState('');
   const [minOrderAmount, setMinOrderAmount] = useState('');
+  const [isDisplayed, setIsDisplayed] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -50,6 +51,7 @@ export default function Coupons() {
         maxGlobalUses: maxGlobalUses || null,
         maxUsesPerUser: maxUsesPerUser || null,
         minOrderAmount: minOrderAmount || 0,
+        isDisplayed,
       });
       setCode('');
       setDiscountPercent('');
@@ -57,6 +59,7 @@ export default function Coupons() {
       setMaxGlobalUses('');
       setMaxUsesPerUser('');
       setMinOrderAmount('');
+      setIsDisplayed(false);
       toast('Coupon created', 'success');
       load();
     } catch (err) {
@@ -69,7 +72,27 @@ export default function Coupons() {
   async function toggleActive(c) {
     try {
       await api.coupons.update(c.id, { isActive: !c.isActive });
-      toast(c.isActive ? 'Coupon deactivated' : 'Coupon activated', 'info');
+      // Disabling also unpublishes server-side, so a coupon can never be
+      // advertised on checkout while the apply step would refuse it.
+      toast(
+        c.isActive
+          ? (c.isDisplayed ? 'Coupon disabled and removed from checkout' : 'Coupon deactivated')
+          : 'Coupon activated',
+        'info',
+      );
+      load();
+    } catch (err) {
+      toast(err.message || 'Failed to update coupon', 'error');
+    }
+  }
+
+  async function toggleDisplayed(c) {
+    if (!c.isDisplayed && !window.confirm(
+      `Show "${c.code}" on the checkout page? Every visitor buying an eligible template will see this code.`
+    )) return;
+    try {
+      await api.coupons.update(c.id, { isDisplayed: !c.isDisplayed });
+      toast(c.isDisplayed ? 'Removed from checkout' : 'Now shown on checkout', 'info');
       load();
     } catch (err) {
       toast(err.message || 'Failed to update coupon', 'error');
@@ -124,6 +147,16 @@ export default function Coupons() {
               <label className="form-label">Minimum Order (INR)</label>
               <input className="form-input" type="number" min="0" value={minOrderAmount} onChange={e => setMinOrderAmount(e.target.value)} placeholder="e.g. 999" />
             </div>
+            <div className="form-group">
+              <label className="form-label">Show on checkout</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+                <input type="checkbox" checked={isDisplayed} onChange={e => setIsDisplayed(e.target.checked)} />
+                Advertise publicly
+              </label>
+              <p style={{ margin: '5px 0 0', fontSize: '0.74rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Off = the code still works when typed, it just is not shown.
+              </p>
+            </div>
             <div className="form-group" style={{ display: 'flex', alignItems: 'end' }}>
               <Button variant="primary" type="submit" loading={saving}>Add Coupon</Button>
             </div>
@@ -145,6 +178,7 @@ export default function Coupons() {
                 <th>Limits</th>
                 <th>Min Order</th>
                 <th>Status</th>
+                <th>Checkout</th>
                 <th>Created</th>
                 <th></th>
               </tr>
@@ -160,11 +194,28 @@ export default function Coupons() {
                   </td>
                   <td>INR {((c.minOrderAmount || 0) / 100).toLocaleString('en-IN')}</td>
                   <td>{c.isActive ? 'Active' : 'Inactive'}</td>
+                  <td>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em',
+                      color: c.isDisplayed ? 'var(--success, #2e7d4f)' : 'var(--text-muted)',
+                    }}>
+                      {c.isDisplayed ? 'SHOWN' : 'Hidden'}
+                    </span>
+                  </td>
                   <td>{new Date(c.createdAt).toLocaleDateString('en-IN')}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <Button size="sm" variant="ghost" onClick={() => toggleActive(c)}>
                         {c.isActive ? 'Disable' : 'Enable'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={!c.isActive && !c.isDisplayed}
+                        title={!c.isActive ? 'Enable the coupon before showing it on checkout' : ''}
+                        onClick={() => toggleDisplayed(c)}
+                      >
+                        {c.isDisplayed ? 'Unpublish' : 'Show'}
                       </Button>
                       <Button size="sm" variant="danger" onClick={() => deleteCoupon(c)}>
                         Delete
@@ -174,7 +225,7 @@ export default function Coupons() {
                 </tr>
               ))}
               {coupons.length === 0 && (
-                <tr><td colSpan={9} style={{ color: 'var(--text-muted)' }}>No coupons yet.</td></tr>
+                <tr><td colSpan={10} style={{ color: 'var(--text-muted)' }}>No coupons yet.</td></tr>
               )}
             </tbody>
           </table>
