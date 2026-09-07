@@ -133,6 +133,14 @@ export const api = {
     remove:        (id)       => request('DELETE', `/templates/${id}`),
   },
 
+  settings: {
+    getPricing:     ()       => request('GET', '/settings/pricing'),
+    updatePricing:  (body)   => request('PUT', '/settings/pricing', { body }),
+    // Never cached: the whole point is to see what a rate change would do
+    // before committing it.
+    previewPricing: (params) => request('GET', '/settings/pricing/preview', { params }),
+  },
+
   users: {
     list:           (params, opts)  => request('GET',   '/users', { params, cache: true, ...opts }),
     get:            (id)            => request('GET',   `/users/${id}`, { cache: true }),
@@ -182,7 +190,7 @@ export const api = {
 
   analytics: {
     summary: (params) => request('GET', '/analytics/summary', { params }),
-    live:    ()       => request('GET', '/analytics/live'),
+    live:    (params) => request('GET', '/analytics/live', { params }),
   },
 
   // Master template-testing account. `status` is deliberately uncached — the

@@ -8,9 +8,10 @@ import {
   resolveMapFieldsForRow,
   formatLatLngHint,
 } from '../lib/functionFormHelpers';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, formatMoney } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import PhoneField from '../components/PhoneField';
 import { Modal, ConfirmModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import { AdminInviteModal, EditEventModal } from './InvitationModals';
@@ -26,6 +27,7 @@ export default function UserDetail() {
   const loadedOnce = useRef(false);
 
   const [phoneEdit, setPhoneEdit] = useState('');
+  const [phoneCodeEdit, setPhoneCodeEdit] = useState('+91');
   const [savingProfile, setSavingProfile] = useState(false);
 
   const [pwModal, setPwModal] = useState(false);
@@ -44,6 +46,8 @@ export default function UserDetail() {
       .then((res) => {
         setUser(res.data);
         setPhoneEdit(res.data.phone || '');
+        // Without this an existing US number would be re-saved under +91.
+        setPhoneCodeEdit(res.data.phoneCountryCode || '+91');
         loadedOnce.current = true;
       })
       .catch((err) => toast(err.message, 'error'))
@@ -61,10 +65,19 @@ export default function UserDetail() {
   );
   const hasPairedInvite = pairedInviteSets.length > 0;
 
+  // A paid upgrade cannot be priced for someone who bought in USD: the balance
+  // is a difference of two INR template prices and would bill them in a currency
+  // they never transacted in. The backend refuses it outright; this just means
+  // admin sees why before clicking rather than after.
+  const intlBuyer = (user?.payments || []).find(p => p.storefront === 'INTL' && p.status === 'paid') || null;
+
   async function saveProfile() {
     setSavingProfile(true);
     try {
-      const res = await api.users.updateProfile(id, { phone: phoneEdit.trim() || null });
+      const res = await api.users.updateProfile(id, {
+        phone: phoneEdit.trim() || null,
+        phoneCountryCode: phoneCodeEdit,
+      });
       setUser((u) => ({ ...u, ...res.data }));
       toast('Account details saved', 'success');
     } catch (err) {
@@ -112,7 +125,16 @@ export default function UserDetail() {
             </div>
             <div className="form-group">
               <label className="form-label">Phone</label>
-              <input className="form-input" value={phoneEdit} onChange={(e) => setPhoneEdit(e.target.value)} placeholder="Mobile" />
+              <PhoneField
+                countryCode={phoneCodeEdit}
+                number={phoneEdit}
+                placeholder="Mobile"
+                onChange={({ countryCode, number }) => {
+                  setPhoneCodeEdit(countryCode);
+                  setPhoneEdit(number);
+                }}
+              />
+              <p className="form-hint">Clearing this releases the couple&apos;s write-once lock.</p>
             </div>
           </div>
           <Button variant="primary" size="sm" loading={savingProfile} onClick={saveProfile}>Save account details</Button>
@@ -137,7 +159,7 @@ export default function UserDetail() {
                 {user.payments.map((p) => (
                   <tr key={p.id} className="clickable" onClick={() => navigate(`/transactions/${p.id}`)}>
                     <td className="td-primary">{p.template?.name || '—'}</td>
-                    <td>{formatCurrency(p.amount)}</td>
+                    <td>{formatMoney(p.amount, p.currency)}</td>
                     <td><Badge status={p.status} /></td>
                     <td>{formatDate(p.createdAt)}</td>
                   </tr>
@@ -211,6 +233,7 @@ export default function UserDetail() {
       {swapModal && (
         <SwapTemplateModal
           userId={id}
+          intlBuyer={intlBuyer}
           event={swapModal}
           onClose={() => setSwapModal(null)}
           onSuccess={(msg) => { setSwapModal(null); load(); toast(msg || 'Done', 'success'); }}
@@ -247,6 +270,7 @@ export default function UserDetail() {
       {swapPairedOpen && (
         <SwapPairedTemplateModal
           userId={id}
+          intlBuyer={intlBuyer}
           pairs={pairedInviteSets}
           onClose={() => setSwapPairedOpen(false)}
           onSuccess={(msg) => { setSwapPairedOpen(false); load(); toast(msg || 'Done', 'success'); }}
@@ -728,7 +752,7 @@ function ResetPasswordModal({ userId, onClose, onSuccess }) {
   );
 }
 
-function SwapTemplateModal({ userId, event, onClose, onSuccess }) {
+function SwapTemplateModal({ userId, event, intlBuyer, onClose, onSuccess }) {
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState('');
   const [saving, setSaving] = useState(false);
@@ -744,6 +768,8 @@ function SwapTemplateModal({ userId, event, onClose, onSuccess }) {
   const picked = templates.find((t) => t.id === selected);
   const delta = picked ? picked.price - currentPrice : null;
   const needsPayment = picked && delta !== null && delta > 0;
+  // Backend refuses this anyway; disabling here saves a pointless round trip.
+  const blockedIntl = Boolean(needsPayment && intlBuyer);
   const primaryLabel = !picked ? 'Continue' : needsPayment ? 'Email payment link' : 'Switch template now';
 
   async function handle() {
@@ -764,7 +790,7 @@ function SwapTemplateModal({ userId, event, onClose, onSuccess }) {
     <Modal title="Change template" onClose={onClose} footer={(
       <>
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" loading={saving} onClick={handle} disabled={!selected}>{primaryLabel}</Button>
+        <Button variant="primary" loading={saving} onClick={handle} disabled={!selected || blockedIntl}>{primaryLabel}</Button>
       </>
     )}
     >
@@ -785,7 +811,15 @@ function SwapTemplateModal({ userId, event, onClose, onSuccess }) {
           {delta <= 0 && (
             <span>The new template is the same price or cheaper — <strong>swap applies immediately</strong> with no payment.</span>
           )}
-          {delta > 0 && (
+          {delta > 0 && intlBuyer && (
+            <span style={{ color: 'var(--rose, #b42318)' }}>
+              This customer bought on the <strong>international storefront</strong> and paid
+              in {intlBuyer.currency || 'USD'}. Paid upgrades are INR-only — the balance
+              above is a difference of rupee template prices and is <strong>not</strong> what
+              they owe. Arrange this one manually.
+            </span>
+          )}
+          {delta > 0 && !intlBuyer && (
             <span>
               Price difference: <strong>{formatCurrency(delta)}</strong>. Click <strong>Email payment link</strong> to email them a Razorpay checkout link. After payment, the webhook switches their invite to the new template. If Razorpay is not configured, a placeholder link is emailed instead (template will not switch until a real payment is recorded).
             </span>
@@ -796,7 +830,7 @@ function SwapTemplateModal({ userId, event, onClose, onSuccess }) {
   );
 }
 
-function SwapPairedTemplateModal({ userId, pairs, onClose, onSuccess }) {
+function SwapPairedTemplateModal({ userId, pairs, intlBuyer, onClose, onSuccess }) {
   const [invitePairId, setInvitePairId] = useState(() => pairs[0]?.pairId ?? '');
   const [templates, setTemplates] = useState([]);
   const [selected, setSelected] = useState('');
@@ -821,6 +855,8 @@ function SwapPairedTemplateModal({ userId, pairs, onClose, onSuccess }) {
   const picked = templates.find((t) => t.id === selected);
   const delta = picked ? picked.price - currentPrice : null;
   const needsPayment = picked && delta !== null && delta > 0;
+  // Backend refuses this anyway; disabling here saves a pointless round trip.
+  const blockedIntl = Boolean(needsPayment && intlBuyer);
   const primaryLabel = !picked ? 'Continue' : needsPayment ? 'Email payment link' : 'Switch both now';
 
   async function handle() {
@@ -855,7 +891,7 @@ function SwapPairedTemplateModal({ userId, pairs, onClose, onSuccess }) {
       footer={(
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" loading={saving} onClick={handle} disabled={!selected}>{primaryLabel}</Button>
+          <Button variant="primary" loading={saving} onClick={handle} disabled={!selected || blockedIntl}>{primaryLabel}</Button>
         </>
       )}
     >
@@ -889,7 +925,15 @@ function SwapPairedTemplateModal({ userId, pairs, onClose, onSuccess }) {
           {delta <= 0 && (
             <span>Same price or cheaper — <strong>both invitations switch immediately</strong> with no payment.</span>
           )}
-          {delta > 0 && (
+          {delta > 0 && intlBuyer && (
+            <span style={{ color: 'var(--rose, #b42318)' }}>
+              This customer bought on the <strong>international storefront</strong> and paid
+              in {intlBuyer.currency || 'USD'}. Paid upgrades are INR-only — the balance
+              above is a difference of rupee template prices and is <strong>not</strong> what
+              they owe. Arrange this one manually.
+            </span>
+          )}
+          {delta > 0 && !intlBuyer && (
             <span>
               Price difference: <strong>{formatCurrency(delta)}</strong> (one payment covers <strong>both</strong> invites). A Razorpay link will be emailed; after payment, both update automatically.
             </span>

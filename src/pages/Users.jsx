@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { formatDate } from '../lib/utils';
+import { formatDate, formatPhone } from '../lib/utils';
 import { Pagination } from '../components/ui/Pagination';
 import { useToast } from '../components/ui/Toast';
 import { useDebounced } from '../lib/useDebounced';
@@ -119,7 +119,7 @@ export default function Users() {
                   <td>
                     <div className="td-primary">{u.email}</div>
                   </td>
-                  <td>{u.phone || '—'}</td>
+                  <td>{formatPhone(u.phone, u.phoneCountryCode)}</td>
                   <td>{u._count?.events ?? 0}</td>
                   <td>{u._count?.payments ?? 0}</td>
                   <td>{formatDate(u.createdAt)}</td>

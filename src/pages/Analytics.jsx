@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 
+// The two websites report into one database, so this picks which storefront's
+// traffic is on screen. '' means both combined.
+const STOREFRONTS = [
+  { value: '',     label: 'All' },
+  { value: 'IN',   label: 'India' },
+  { value: 'INTL', label: 'International' },
+];
+
 const PRESETS = [
   { label: 'Today', days: 0 },
   { label: '7 days', days: 6 },
@@ -22,6 +30,7 @@ function isoDay(d) {
 
 export default function Analytics() {
   const [days, setDays] = useState(29);
+  const [storefront, setStorefront] = useState('');
   const [data, setData] = useState(null);
   const [live, setLive] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +45,7 @@ export default function Analytics() {
     setError('');
     const to = new Date();
     const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    api.analytics.summary({ from: isoDay(from), to: isoDay(to) })
+    api.analytics.summary({ from: isoDay(from), to: isoDay(to), ...(storefront ? { storefront } : {}) })
       .then(setData)
       .catch(e => setError(e.message || 'Failed to load analytics'))
       .finally(() => {
@@ -44,14 +53,14 @@ export default function Analytics() {
         setRefreshing(false);
         loadedOnce.current = true;
       });
-  }, [days]);
+  }, [days, storefront]);
 
   // Live visitors refresh every 30s — but only while the tab is actually
   // visible. It used to keep polling in a background tab indefinitely.
   useEffect(() => {
     const load = () => {
       if (document.visibilityState !== 'visible') return;
-      api.analytics.live().then(setLive).catch(() => {});
+      api.analytics.live(storefront ? { storefront } : undefined).then(setLive).catch(() => {});
     };
     load();
     const t = setInterval(load, 30000);
@@ -60,7 +69,9 @@ export default function Analytics() {
       clearInterval(t);
       document.removeEventListener('visibilitychange', load);
     };
-  }, []);
+    // Re-subscribe when the storefront filter changes, or the live count would
+    // keep reporting whichever site was selected when the page first mounted.
+  }, [storefront]);
 
   const ov = data?.overview;
   const liveCount = live?.liveVisitors ?? ov?.liveVisitors ?? 0;
@@ -72,16 +83,29 @@ export default function Analytics() {
           <h1 className="page-title">Website Analytics</h1>
           <p className="page-subtitle">First-party traffic, sources and conversion funnel</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {PRESETS.map(p => (
-            <button
-              key={p.days}
-              className={`btn btn-sm ${days === p.days ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setDays(p.days)}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {STOREFRONTS.map(sf => (
+              <button
+                key={sf.value || 'all'}
+                className={`btn btn-sm ${storefront === sf.value ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setStorefront(sf.value)}
+              >
+                {sf.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {PRESETS.map(p => (
+              <button
+                key={p.days}
+                className={`btn btn-sm ${days === p.days ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => setDays(p.days)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

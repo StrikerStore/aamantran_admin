@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
-import { formatDateTime, formatRelative } from '../lib/utils';
+import { formatDateTime, formatRelative, formatPhone } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
@@ -163,7 +163,7 @@ export default function TicketDetail() {
               <tbody>
                 <tr><td>Username</td><td>{ticket.user?.username || '—'}</td></tr>
                 <tr><td>Email</td><td>{ticket.user?.email}</td></tr>
-                <tr><td>Phone</td><td>{ticket.user?.phone || '—'}</td></tr>
+                <tr><td>Phone</td><td>{formatPhone(ticket.user?.phone, ticket.user?.phoneCountryCode)}</td></tr>
               </tbody>
             </table>
           </div>

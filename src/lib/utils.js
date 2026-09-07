@@ -5,6 +5,53 @@ export function formatCurrency(paise) {
   return '₹' + (paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 0 });
 }
 
+/**
+ * Money in whichever currency it was actually charged in.
+ *
+ * Amounts are stored in the MINOR units of their own currency — paise for INR,
+ * cents for USD — so the divisor is the same but the symbol and grouping are
+ * not. Never sum across currencies; group by currency first.
+ *
+ * Dollars keep their cents because international prices are deliberately .99;
+ * rupees drop them, matching how prices have always been shown here.
+ */
+export function formatMoney(minor, currency = 'INR') {
+  if (minor == null) return '—';
+  const amount = minor / 100;
+  if (String(currency).toUpperCase() === 'USD') {
+    return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 0 });
+}
+
+/**
+ * INR paise -> USD cents, at a .99 price point.
+ *
+ * MIRRORS aamantran_backend/src/services/pricing.service.js `deriveUsdCents`.
+ * The backend is the authority — this copy exists only so the template form can
+ * show what a multiplier does without a round trip. Keep the two in step.
+ *
+ * cents = paise * multiplier / rate, collapsed to an integer first so the tier
+ * maths below cannot flip on a floating-point hair; then a strict ceiling to the
+ * next whole $10, minus a cent.
+ */
+export function deriveUsdCents(inrPaise, usdInrRate, multiplier) {
+  const paise = Number(inrPaise);
+  const rate  = Number(usdInrRate);
+  const mult  = Number(multiplier);
+  if (!Number.isFinite(paise) || paise <= 0) return null;
+  if (!Number.isFinite(rate)  || rate  <= 0) return null;
+  if (!Number.isFinite(mult)  || mult  <= 0) return null;
+  const rawCents  = Math.round((paise * mult) / rate);
+  return (Math.floor(rawCents / 1000) + 1) * 1000 - 1;
+}
+
+/** '+91 9876543210' from the split columns, or '—' when unset. */
+export function formatPhone(phone, phoneCountryCode) {
+  if (!phone) return '—';
+  return (phoneCountryCode ? phoneCountryCode + ' ' : '') + phone;
+}
+
 export function formatDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });

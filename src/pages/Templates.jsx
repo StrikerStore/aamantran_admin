@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
 import { COMMUNITIES, ALL_EVENT_TYPES } from '../lib/constants';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, formatMoney, deriveUsdCents } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/Modal';
@@ -43,6 +43,27 @@ const CATEGORY_COLORS = {
 };
 
 export default function Templates() {
+  // Global rate/default so the list can show what each template sells for
+  // abroad. Silent on failure — a settings hiccup must not blank the catalogue.
+  const [pricing, setPricing] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    api.settings.getPricing()
+      .then(r => { if (!cancelled) setPricing(r.data || null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const usdFor = (t) => {
+    if (!pricing) return null;
+    const cents = deriveUsdCents(
+      t.price,
+      pricing.usdInrRate,
+      t.markupMultiplier != null ? t.markupMultiplier : pricing.defaultMarkupMultiplier,
+    );
+    return cents == null ? null : formatMoney(cents, 'USD');
+  };
+
   const navigate = useNavigate();
   const toast    = useToast();
 
@@ -217,6 +238,11 @@ export default function Templates() {
                     {t.originalPrice && (
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
                         {formatCurrency(t.originalPrice)}
+                      </div>
+                    )}
+                    {usdFor(t) && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {usdFor(t)} intl
                       </div>
                     )}
                   </td>

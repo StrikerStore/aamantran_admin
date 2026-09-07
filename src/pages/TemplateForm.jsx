@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
 import { getInviteBaseUrl } from '../lib/config';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, formatMoney, deriveUsdCents } from '../lib/utils';
 import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES } from '../lib/constants';
 import { Button } from '../components/ui/Button';
 import { CollapsibleCard } from '../components/ui/CollapsibleCard';
@@ -78,6 +78,8 @@ export default function TemplateForm() {
   const [price,         setPrice]         = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const [gstPercent,    setGstPercent]    = useState('0');
+  const [markupMultiplier, setMarkupMultiplier] = useState('');
+  const [pricingSettings,  setPricingSettings]  = useState(null);
   const [aboutText,     setAboutText]     = useState('');
   const [zipFile,       setZipFile]       = useState(null);
   const [existingZipMeta, setExistingZipMeta] = useState(null);
@@ -131,6 +133,7 @@ export default function TemplateForm() {
       setPrice(String(t.price / 100));
       setOriginalPrice(t.originalPrice ? String(t.originalPrice / 100) : '');
       setGstPercent(String(t.gstPercent ?? 0));
+    setMarkupMultiplier(t.markupMultiplier != null ? String(t.markupMultiplier) : '');
       setAboutText(t.aboutText || '');
       if (t.folderPath) {
         setExistingZipMeta({
@@ -418,6 +421,26 @@ export default function TemplateForm() {
     };
   }
 
+  // The global rate/default, so the hint below can show a real dollar figure
+  // rather than describing the formula. Failure is silent: an unreachable
+  // settings endpoint must not block editing a template.
+  useEffect(() => {
+    let cancelled = false;
+    api.settings.getPricing()
+      .then(r => { if (!cancelled) setPricingSettings(r.data || null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const usdPreview = (() => {
+    if (!pricingSettings || !price) return null;
+    const mult = markupMultiplier === ''
+      ? pricingSettings.defaultMarkupMultiplier
+      : markupMultiplier;
+    const cents = deriveUsdCents(Math.round(Number(price) * 100), pricingSettings.usdInrRate, mult);
+    return cents == null ? null : formatMoney(cents, 'USD');
+  })();
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (languages.length === 0) { toast('Select at least one language', 'error'); return; }
@@ -438,6 +461,8 @@ export default function TemplateForm() {
         fd.append('price',        String(Math.round(Number(price) * 100)));
         fd.append('originalPrice', originalPrice ? String(Math.round(Number(originalPrice) * 100)) : '');
         fd.append('gstPercent',   String(Math.max(0, Number(gstPercent || 0))));
+    // '' clears it back to the global default; the backend treats blank as null.
+    fd.append('markupMultiplier', markupMultiplier === '' ? '' : String(Number(markupMultiplier)));
         fd.append('aboutText',    aboutText);
         if (desktopThumbFile) fd.append('desktopThumbnailImage', desktopThumbFile);
         if (mobileThumbFile) fd.append('mobileThumbnailImage', mobileThumbFile);
@@ -478,6 +503,8 @@ export default function TemplateForm() {
         fd.append('price',        String(Math.round(Number(price) * 100)));
         if (originalPrice) fd.append('originalPrice', String(Math.round(Number(originalPrice) * 100)));
         fd.append('gstPercent',   String(Math.max(0, Number(gstPercent || 0))));
+    // '' clears it back to the global default; the backend treats blank as null.
+    fd.append('markupMultiplier', markupMultiplier === '' ? '' : String(Number(markupMultiplier)));
         fd.append('aboutText',    aboutText);
         fd.append('demoData',     JSON.stringify(demoPayload));
         fd.append('templateZip',  zipFile);
@@ -784,6 +811,21 @@ export default function TemplateForm() {
               <div className="form-group">
                 <label className="form-label">GST %</label>
                 <input className="form-input" type="number" min="0" max="100" step="1" value={gstPercent} onChange={e => setGstPercent(e.target.value)} placeholder="18" />
+                <p className="form-hint">India only — international sales are zero-rated.</p>
+              </div>
+              <div className="form-group">
+                <label className="form-label">International multiplier</label>
+                <input
+                  className="form-input" type="number" min="0.1" max="20" step="0.01"
+                  value={markupMultiplier}
+                  onChange={e => setMarkupMultiplier(e.target.value)}
+                  placeholder={pricingSettings ? String(pricingSettings.defaultMarkupMultiplier) : '3'}
+                />
+                <p className="form-hint">
+                  {usdPreview
+                    ? <>Sells for <strong>{usdPreview}</strong> on aamantranglobal.com{markupMultiplier === '' ? ' (global default)' : ''}</>
+                    : 'Leave blank to use the global default from Pricing Settings.'}
+                </p>
               </div>
             </div>
           </div>

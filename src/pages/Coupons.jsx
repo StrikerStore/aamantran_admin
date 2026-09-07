@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/Button';
+import { Select } from '../components/ui/Select';
 import { useToast } from '../components/ui/Toast';
 import { Pagination } from '../components/ui/Pagination';
+import { formatMoney } from '../lib/utils';
 
 const PAGE_SIZE = 20;
 
@@ -21,6 +23,7 @@ export default function Coupons() {
   const [maxUsesPerUser, setMaxUsesPerUser] = useState('');
   const [minOrderAmount, setMinOrderAmount] = useState('');
   const [isDisplayed, setIsDisplayed] = useState(false);
+  const [storefront, setStorefront] = useState('IN');
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -52,6 +55,7 @@ export default function Coupons() {
         maxUsesPerUser: maxUsesPerUser || null,
         minOrderAmount: minOrderAmount || 0,
         isDisplayed,
+        storefront,
       });
       setCode('');
       setDiscountPercent('');
@@ -60,6 +64,7 @@ export default function Coupons() {
       setMaxUsesPerUser('');
       setMinOrderAmount('');
       setIsDisplayed(false);
+      setStorefront('IN');
       toast('Coupon created', 'success');
       load();
     } catch (err) {
@@ -99,6 +104,17 @@ export default function Coupons() {
     }
   }
 
+  async function changeStorefront(c, storefront) {
+    if (storefront === (c.storefront || 'IN')) return;
+    try {
+      await api.coupons.update(c.id, { storefront });
+      toast(`"${c.code}" now applies to ${storefront === 'BOTH' ? 'both storefronts' : storefront === 'INTL' ? 'the international site' : 'India'}`, 'info');
+      load();
+    } catch (err) {
+      toast(err.message || 'Failed to update coupon', 'error');
+    }
+  }
+
   async function deleteCoupon(c) {
     if (!window.confirm(`Delete coupon "${c.code}"?`)) return;
     try {
@@ -128,6 +144,18 @@ export default function Coupons() {
               <input className="form-input" value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="WELCOME10" required />
             </div>
             <div className="form-group">
+              <label className="form-label">Storefront</label>
+              <Select className="form-select" value={storefront} onChange={e => setStorefront(e.target.value)}>
+                <option value="IN">India only (₹)</option>
+                <option value="INTL">International only ($)</option>
+                <option value="BOTH">Both</option>
+              </Select>
+              <p className="form-hint">
+                Minimum order is read in that storefront&apos;s own currency, so a code meant
+                for rupees must not be let loose on dollar orders.
+              </p>
+            </div>
+            <div className="form-group">
               <label className="form-label">Discount %</label>
               <input className="form-input" type="number" min="1" max="100" value={discountPercent} onChange={e => setDiscountPercent(e.target.value)} placeholder="10" required />
             </div>
@@ -144,7 +172,7 @@ export default function Coupons() {
               <input className="form-input" type="number" min="1" value={maxUsesPerUser} onChange={e => setMaxUsesPerUser(e.target.value)} placeholder="e.g. 1" />
             </div>
             <div className="form-group">
-              <label className="form-label">Minimum Order (INR)</label>
+              <label className="form-label">Minimum Order ({storefront === 'INTL' ? 'USD' : 'INR'})</label>
               <input className="form-input" type="number" min="0" value={minOrderAmount} onChange={e => setMinOrderAmount(e.target.value)} placeholder="e.g. 999" />
             </div>
             <div className="form-group">
@@ -173,6 +201,7 @@ export default function Coupons() {
             <thead>
               <tr>
                 <th>Code</th>
+                <th>Storefront</th>
                 <th>Discount</th>
                 <th>Expiry</th>
                 <th>Limits</th>
@@ -187,12 +216,25 @@ export default function Coupons() {
               {coupons.map(c => (
                 <tr key={c.id}>
                   <td className="td-primary">{c.code}</td>
+                  <td>
+                    <Select
+                      className="form-select"
+                      value={c.storefront || 'IN'}
+                      onChange={e => changeStorefront(c, e.target.value)}
+                    >
+                      <option value="IN">India</option>
+                      <option value="INTL">International</option>
+                      <option value="BOTH">Both</option>
+                    </Select>
+                  </td>
                   <td>{c.discountPercent}%</td>
                   <td>{c.expiresAt ? new Date(c.expiresAt).toLocaleString('en-IN') : 'No expiry'}</td>
                   <td>
                     G: {c.maxGlobalUses ?? '∞'} / U: {c.maxUsesPerUser ?? '∞'}
                   </td>
-                  <td>INR {((c.minOrderAmount || 0) / 100).toLocaleString('en-IN')}</td>
+                  {/* Minimum is denominated in the coupon's OWN storefront
+                      currency, so an INTL code's figure is dollars, not rupees. */}
+                  <td>{formatMoney(c.minOrderAmount || 0, c.storefront === 'INTL' ? 'USD' : 'INR')}</td>
                   <td>{c.isActive ? 'Active' : 'Inactive'}</td>
                   <td>
                     <span style={{

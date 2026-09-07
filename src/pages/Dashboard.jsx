@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, formatMoney } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 
 export default function Dashboard() {
@@ -125,7 +125,7 @@ export default function Dashboard() {
                       <div className="td-primary">{tx.user?.username || tx.user?.email || '—'}</div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{tx.template?.name}</div>
                     </td>
-                    <td>{formatCurrency(tx.amount)}</td>
+                    <td>{formatMoney(tx.amount, tx.currency)}</td>
                     <td><Badge status={tx.status} /></td>
                   </tr>
                 ))}

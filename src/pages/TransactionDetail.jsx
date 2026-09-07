@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
-import { formatCurrency, formatDateTime } from '../lib/utils';
+import { formatMoney, formatDateTime, formatPhone } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/Modal';
@@ -53,7 +53,7 @@ export default function TransactionDetail() {
 
       <div className="page-header">
         <div className="page-header-left">
-          <h1 className="page-title">{formatCurrency(tx.amount)}</h1>
+          <h1 className="page-title">{formatMoney(tx.amount, tx.currency)}</h1>
           <p className="page-subtitle">{formatDateTime(tx.createdAt)}</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -80,8 +80,33 @@ export default function TransactionDetail() {
                 <tbody>
                   <tr><td>Order ID</td><td><span className="mono">{tx.orderId || '—'}</span></td></tr>
                   <tr><td>Status</td><td><Badge status={tx.status} /></td></tr>
-                  <tr><td>Amount</td><td className="td-primary">{formatCurrency(tx.amount)}</td></tr>
+                  <tr><td>Amount</td><td className="td-primary">{formatMoney(tx.amount, tx.currency)}</td></tr>
                   <tr><td>Currency</td><td>{tx.currency}</td></tr>
+                  <tr>
+                    <td>Storefront</td>
+                    <td>{tx.storefront === 'INTL' ? 'International (aamantranglobal.com)' : 'India (aamantran.online)'}</td>
+                  </tr>
+                  {/* Where the buyer was when they paid — the record that an
+                      international sale really was an export, which is what
+                      zero-rating GST on it rests on. */}
+                  <tr><td>Buyer country</td><td>{tx.countryCode || '—'}</td></tr>
+                  <tr>
+                    <td>GST</td>
+                    <td>
+                      {tx.storefront === 'INTL'
+                        ? 'Zero-rated (export)'
+                        : formatMoney(tx.gstAmount ?? 0, tx.currency)}
+                    </td>
+                  </tr>
+                  {tx.storefront === 'INTL' && (
+                    <tr>
+                      <td>Priced at</td>
+                      <td>
+                        {tx.fxRate ? `₹${Number(tx.fxRate)} / $1` : '—'}
+                        {tx.markupMultiplier ? ` × ${Number(tx.markupMultiplier)}` : ''}
+                      </td>
+                    </tr>
+                  )}
                   <tr><td>Template</td><td>{tx.template?.name || '—'}</td></tr>
                   <tr><td>Date</td><td>{formatDateTime(tx.createdAt)}</td></tr>
                   <tr><td>PayU Txn ID</td><td><span className="mono">{tx.payuTxnId || '—'}</span></td></tr>
@@ -103,7 +128,7 @@ export default function TransactionDetail() {
                   <tbody>
                     <tr><td>Username</td><td>{tx.user.username || '—'}</td></tr>
                     <tr><td>Email</td><td>{tx.user.email}</td></tr>
-                    <tr><td>Phone</td><td>{tx.user.phone || '—'}</td></tr>
+                    <tr><td>Phone</td><td>{formatPhone(tx.user.phone, tx.user.phoneCountryCode)}</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -129,7 +154,7 @@ export default function TransactionDetail() {
       {confirm && (
         <ConfirmModal
           title="Issue Refund"
-          message={`Refund ${formatCurrency(tx.amount)} for this transaction? This action cannot be undone.`}
+          message={`Refund ${formatMoney(tx.amount, tx.currency)} for this transaction? This action cannot be undone.`}
           confirmText="Issue Refund"
           icon="💸"
           onConfirm={handleRefund}

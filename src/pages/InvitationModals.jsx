@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
 import { computeFunctionSortOrders, resolveMapFieldsForRow, formatLatLngHint } from '../lib/functionFormHelpers';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, formatMoney } from '../lib/utils';
 import { Button } from '../components/ui/Button';
 import { Modal, ConfirmModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
@@ -345,7 +345,7 @@ export function AdminInviteModal({ userId, user, onClose, onSuccess }) {
       </p>
       {has ? (
         <div className="form-group"><label className="form-label">Purchase (template source)</label>
-          <Select className="form-select" value={paymentId} onChange={e => setPaymentId(e.target.value)}>{payments.map(p => <option key={p.id} value={p.id}>{p.template?.name || 'Template'} — {formatCurrency(p.amount)} — {p.status}</option>)}</Select></div>
+          <Select className="form-select" value={paymentId} onChange={e => setPaymentId(e.target.value)}>{payments.map(p => <option key={p.id} value={p.id}>{p.template?.name || 'Template'} — {formatMoney(p.amount, p.currency)} — {p.status}</option>)}</Select></div>
       ) : (
         <div className="form-group"><label className="form-label">Template</label>
           <Select className="form-select" value={templateId} onChange={e => setTplId(e.target.value)}>{templates.map(t => <option key={t.id} value={t.id}>{t.name} — {t.community}</option>)}</Select>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, formatMoney } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Pagination } from '../components/ui/Pagination';
 import { useToast } from '../components/ui/Toast';
@@ -94,7 +94,7 @@ export default function Transactions() {
                       ? <span style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>/{tx.event.slug}</span>
                       : '—'}
                   </td>
-                  <td className="td-primary">{formatCurrency(tx.amount)}</td>
+                  <td className="td-primary">{formatMoney(tx.amount, tx.currency)}</td>
                   <td><Badge status={tx.status} /></td>
                   <td>{formatDate(tx.createdAt)}</td>
                 </tr>
