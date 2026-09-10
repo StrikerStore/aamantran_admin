@@ -18,6 +18,26 @@ export const COMMUNITIES = [
 
 export const COMMUNITY_VALUES = COMMUNITIES.map(c => c.value);
 
+// ── Template corner tag ───────────────────────────────────────────────────────
+// Mirrors TEMPLATE_BADGES in backend/src/lib/constants.js. A closed list rather
+// than free text: each value has its own colour on the storefront, and this is
+// what stops the same idea arriving as TRENDING / Trending / trendy.
+// Adding one means adding it here, in the backend, and in the website's
+// lib/templateBadges.ts.
+export const TEMPLATE_BADGES = [
+  { value: '',           label: 'No tag' },
+  { value: 'new',        label: 'New' },
+  { value: 'trending',   label: 'Trending' },
+  { value: 'bestseller', label: 'Bestseller' },
+  { value: 'popular',    label: 'Popular' },
+  { value: 'limited',    label: 'Limited' },
+];
+
+/** Display label for a stored badge key, or '' when there is no tag. */
+export function badgeLabel(value) {
+  return TEMPLATE_BADGES.find(b => b.value === (value || ''))?.label ?? '';
+}
+
 // ── Event Types ───────────────────────────────────────────────────────────────
 // Used in Template.bestFor (comma-separated) and Event.eventType.
 export const EVENT_TYPE_GROUPS = [

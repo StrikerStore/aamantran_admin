@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
-import { COMMUNITIES, ALL_EVENT_TYPES } from '../lib/constants';
+import { COMMUNITIES, ALL_EVENT_TYPES, badgeLabel } from '../lib/constants';
 import { formatCurrency, formatDate, formatMoney, deriveUsdCents } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -190,7 +190,20 @@ export default function Templates() {
                         </div>
                       )}
                       <div>
-                        <div className="td-primary">{t.name}</div>
+                        <div className="td-primary">
+                          {t.name}
+                          {t.badge && (
+                            <span style={{
+                              marginLeft: 8, fontSize: '0.62rem', fontWeight: 700,
+                              letterSpacing: '0.06em', textTransform: 'uppercase',
+                              padding: '2px 7px', borderRadius: 999,
+                              background: 'var(--bg-elevated)', color: 'var(--text-muted)',
+                              verticalAlign: 'middle',
+                            }}>
+                              {badgeLabel(t.badge)}
+                            </span>
+                          )}
+                        </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t.slug}</div>
                         <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                           {t.desktopThumbnailUrl || t.thumbnailUrl ? '🖥️' : '—'} {t.mobileThumbnailUrl ? '📱' : ''}

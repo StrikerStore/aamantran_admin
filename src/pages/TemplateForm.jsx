@@ -5,7 +5,7 @@ import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
 import { getInviteBaseUrl } from '../lib/config';
 import { formatCurrency, formatMoney, deriveUsdCents } from '../lib/utils';
-import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES } from '../lib/constants';
+import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES, TEMPLATE_BADGES } from '../lib/constants';
 import { Button } from '../components/ui/Button';
 import { CollapsibleCard } from '../components/ui/CollapsibleCard';
 import { useToast } from '../components/ui/Toast';
@@ -70,6 +70,7 @@ export default function TemplateForm() {
   const [slug,          setSlug]          = useState('');
   const [name,          setName]          = useState('');
   const [community,     setCommunity]     = useState('hindu');
+  const [badge,         setBadge]         = useState('');
   const [bestFor,       setBestFor]       = useState([]);
   const [languages,     setLanguages]     = useState(['en']);
   const [style,         setStyle]         = useState('');
@@ -125,6 +126,7 @@ export default function TemplateForm() {
       setSlug(t.slug || '');
       setName(t.name);
       setCommunity(t.community);
+      setBadge(t.badge || '');
       setBestFor(t.bestFor ? t.bestFor.split(', ').filter(Boolean) : []);
       setLanguages(t.languages ? t.languages.split(', ').filter(Boolean) : ['en']);
       setStyle(t.style || '');
@@ -453,6 +455,8 @@ export default function TemplateForm() {
         const fd = new FormData();
         fd.append('name',         name);
         fd.append('community',    community);
+        // '' clears the tag; the backend treats blank as null.
+        fd.append('badge',        badge);
         fd.append('bestFor',      bestFor.join(', '));
         fd.append('languages',    languages.join(', '));
         fd.append('style',        style);
@@ -495,6 +499,8 @@ export default function TemplateForm() {
         const fd = new FormData();
         fd.append('name',         name);
         fd.append('community',    community);
+        // '' clears the tag; the backend treats blank as null.
+        fd.append('badge',        badge);
         fd.append('bestFor',      bestFor.join(', '));
         fd.append('languages',    languages.join(', '));
         fd.append('style',        style);
@@ -733,6 +739,15 @@ export default function TemplateForm() {
                   {COMMUNITIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </Select>
               </div>
+              <div className="form-group">
+                <label className="form-label">Corner tag</label>
+                <Select className="form-select" value={badge} onChange={e => setBadge(e.target.value)}>
+                  {TEMPLATE_BADGES.map(b => <option key={b.value || 'none'} value={b.value}>{b.label}</option>)}
+                </Select>
+                <p className="form-hint">Shown in the top-left corner of this template&apos;s card across the site. Leave as &ldquo;No tag&rdquo; for none.</p>
+              </div>
+            </div>
+            <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Style</label>
                 <input className="form-input" value={style} onChange={e => setStyle(e.target.value)} placeholder="e.g. Romantic · Garden" />
