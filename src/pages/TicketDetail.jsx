@@ -6,11 +6,30 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
 
+/** How often an open thread checks for new messages. */
+const POLL_MS = 5000;
+/** Treat the reader as "following along" within this many px of the bottom. */
+const NEAR_BOTTOM_PX = 80;
+
+/** Newest createdAt in a message list, as an ISO string, or `fallback`. */
+function newestAt(messages, fallback = null) {
+  let best = fallback ? new Date(fallback).getTime() : -Infinity;
+  let iso = fallback;
+  for (const m of messages || []) {
+    const t = new Date(m.createdAt).getTime();
+    if (t > best) { best = t; iso = m.createdAt; }
+  }
+  return iso;
+}
+
 export default function TicketDetail() {
   const navigate  = useNavigate();
   const toast     = useToast();
   const { id }    = useParams();
   const bottomRef = useRef(null);
+  const threadRef = useRef(null);
+  // Poll bookkeeping: an in-flight guard and the newest message timestamp seen.
+  const poll      = useRef({ inFlight: false, since: null });
 
   const [ticket,   setTicket]   = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -27,7 +46,62 @@ export default function TicketDetail() {
 
   useEffect(() => { load(); }, [id]); // eslint-disable-line
 
+  /**
+   * Keep the thread current without a page reload.
+   *
+   * Keyed on the ticket id alone: each merge produces a new ticket object, so
+   * depending on `ticket` would tear down and restart the interval every time a
+   * message arrived.
+   */
   useEffect(() => {
+    if (!id) return;
+    poll.current = { inFlight: false, since: null };
+
+    const tick = async () => {
+      // A ticket left open in a background tab must not poll all night.
+      if (document.visibilityState !== 'visible') return;
+      // A slow response must not let requests stack up behind it.
+      if (poll.current.inFlight) return;
+      poll.current.inFlight = true;
+      try {
+        const r = await api.tickets.messages(id, poll.current.since);
+        const incoming = r.messages || [];
+        poll.current.since = newestAt(incoming, poll.current.since);
+        setTicket(t => {
+          if (!t || t.id !== id) return t;
+          // Merge by id, never by count: this makes our own just-sent reply safe
+          // when the poll returns it again, and survives two messages sharing a
+          // millisecond, which a `createdAt >` filter alone would skip.
+          const seen = new Set((t.messages || []).map(m => m.id));
+          const added = incoming.filter(m => !seen.has(m.id));
+          const status = r.status ?? t.status;
+          if (!added.length && status === t.status) return t; // unchanged — keep identity
+          return { ...t, status, messages: [...(t.messages || []), ...added] };
+        });
+      } catch {
+        // Transient failure; the next tick retries. Not worth a toast.
+      } finally {
+        poll.current.inFlight = false;
+      }
+    };
+
+    const timer = setInterval(tick, POLL_MS);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [id]);
+
+  useEffect(() => {
+    // Only follow the conversation if the reader is already at the bottom of it.
+    // Messages now arrive on their own, so an unconditional scroll would yank an
+    // agent back down mid-sentence while they read earlier context.
+    const el = threadRef.current;
+    if (el) {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distanceFromBottom > NEAR_BOTTOM_PX) return;
+    }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [ticket?.messages?.length]);
 
@@ -111,7 +185,7 @@ export default function TicketDetail() {
           <span className="card-title">Conversation</span>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{ticket.messages?.length || 0} messages</span>
         </div>
-        <div style={{ padding: '0 24px', maxHeight: 480, overflowY: 'auto' }}>
+        <div ref={threadRef} style={{ padding: '0 24px', maxHeight: 480, overflowY: 'auto' }}>
           {ticket.messages?.length === 0 ? (
             <div className="empty-state"><div className="empty-text">No messages yet</div></div>
           ) : (

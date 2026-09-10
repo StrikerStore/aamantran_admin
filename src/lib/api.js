@@ -170,6 +170,9 @@ export const api = {
   tickets: {
     list:    (params)        => request('GET',   '/tickets', { params, cache: true }),
     get:     (id)            => request('GET',   `/tickets/${id}`, { cache: true }),
+    // Never cached: this is the poll that keeps an open thread current, and the
+    // 30s GET cache would hand back the same answer it just gave.
+    messages: (id, since)    => request('GET',   `/tickets/${id}/messages`, { params: since ? { since } : undefined }),
     reply:   (id, body)      => request('POST',  `/tickets/${id}/reply`, { body: { body } }),
     resolve: (id)            => request('PATCH', `/tickets/${id}/resolve`),
     reopen:  (id)            => request('PATCH', `/tickets/${id}/reopen`),
