@@ -28,6 +28,8 @@ export default function TicketDetail() {
   const { id }    = useParams();
   const bottomRef = useRef(null);
   const threadRef = useRef(null);
+  // Whether this ticket has had its one unconditional jump to the newest message.
+  const didInitialScroll = useRef(false);
   // Poll bookkeeping: an in-flight guard and the newest message timestamp seen.
   const poll      = useRef({ inFlight: false, since: null });
 
@@ -44,7 +46,9 @@ export default function TicketDetail() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [id]); // eslint-disable-line
+  // Navigating straight from one ticket to another reuses this component, so the
+  // next ticket must earn its own jump to the bottom.
+  useEffect(() => { didInitialScroll.current = false; load(); }, [id]); // eslint-disable-line
 
   /**
    * Keep the thread current without a page reload.
@@ -94,16 +98,28 @@ export default function TicketDetail() {
   }, [id]);
 
   useEffect(() => {
-    // Only follow the conversation if the reader is already at the bottom of it.
-    // Messages now arrive on their own, so an unconditional scroll would yank an
-    // agent back down mid-sentence while they read earlier context.
     const el = threadRef.current;
-    if (el) {
-      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-      if (distanceFromBottom > NEAR_BOTTOM_PX) return;
+    if (!el || !ticket) return;
+
+    // Opening a ticket lands on the newest message and the reply box - the part
+    // you came to read - rather than on the top of a months-old thread. Jump
+    // instantly here; smooth-scrolling the length of a long thread on arrival
+    // just makes the page look like it is running away.
+    if (!didInitialScroll.current) {
+      didInitialScroll.current = true;
+      el.scrollTop = el.scrollHeight;
+      return;
     }
+
+    // After that, only follow the conversation if the reader is already at the
+    // bottom of it. Messages now arrive on their own, so an unconditional scroll
+    // would yank an agent back down mid-sentence while they read earlier context.
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom > NEAR_BOTTOM_PX) return;
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [ticket?.messages?.length]);
+    // `ticket` alone covers it: the poll returns the very same object when
+    // nothing changed, so this does not fire on every tick.
+  }, [ticket]);
 
   async function handleReply(e) {
     e.preventDefault();
