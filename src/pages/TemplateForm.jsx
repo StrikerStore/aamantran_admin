@@ -5,7 +5,7 @@ import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
 import { getInviteBaseUrl } from '../lib/config';
 import { formatCurrency, formatMoney, deriveUsdCents } from '../lib/utils';
-import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES, TEMPLATE_BADGES } from '../lib/constants';
+import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES, TEMPLATE_BADGES, TEMPLATE_HIGHLIGHTS } from '../lib/constants';
 import { Button } from '../components/ui/Button';
 import { CollapsibleCard } from '../components/ui/CollapsibleCard';
 import { useToast } from '../components/ui/Toast';
@@ -32,6 +32,31 @@ function emptyCustomFieldRow() {
 
 function emptyMediaSlotRow() {
   return { key: '', label: '', type: 'photo', multiple: false, max: 4, accept: '', allowUrl: true, demoFiles: [], pendingDemoUploads: [] };
+}
+
+/**
+ * Form labels are printed verbatim in the couple's dashboard — nothing
+ * substitutes Handlebars there. A label like "{{groom_name}} Father's Name"
+ * therefore reaches the customer as that exact text, so it is rejected here.
+ * Template variables belong in the template HTML, not in a field label.
+ */
+const LABEL_TOKEN_RE = /\{\{|\}\}/;
+
+function labelsWithTokens({ people, customFields, mediaSlots, functionFields }) {
+  const bad = [];
+  people.forEach((p, i) => {
+    if (LABEL_TOKEN_RE.test(p.label || '')) bad.push(`Person ${i + 1} (${p.role || 'no role'})`);
+  });
+  customFields.forEach((cf, i) => {
+    if (LABEL_TOKEN_RE.test(cf.label || '')) bad.push(`Custom field ${i + 1} (${cf.key || 'no key'})`);
+  });
+  mediaSlots.forEach((s, i) => {
+    if (LABEL_TOKEN_RE.test(s.label || '')) bad.push(`Media slot ${i + 1} (${s.key || 'no key'})`);
+  });
+  Object.entries(functionFields || {}).forEach(([key, cfg]) => {
+    if (LABEL_TOKEN_RE.test(cfg?.label || '')) bad.push(`Ceremony field "${key}"`);
+  });
+  return bad;
 }
 
 /** Same normalization as buildFieldSchema media slot keys */
@@ -82,6 +107,10 @@ export default function TemplateForm() {
   const [markupMultiplier, setMarkupMultiplier] = useState('');
   const [pricingSettings,  setPricingSettings]  = useState(null);
   const [aboutText,     setAboutText]     = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const [highlights,    setHighlights]    = useState([]);
+  // Card copy reads best at 15–25 words; the counter nudges without blocking.
+  const shortDescWords = shortDescription.trim() ? shortDescription.trim().split(/\s+/).length : 0;
   const [zipFile,       setZipFile]       = useState(null);
   const [existingZipMeta, setExistingZipMeta] = useState(null);
   const [currentVersion, setCurrentVersion] = useState(null);
@@ -137,6 +166,13 @@ export default function TemplateForm() {
       setGstPercent(String(t.gstPercent ?? 0));
     setMarkupMultiplier(t.markupMultiplier != null ? String(t.markupMultiplier) : '');
       setAboutText(t.aboutText || '');
+      setShortDescription(t.shortDescription || '');
+      // The admin API returns the stored comma string; the storefront gets an array.
+      setHighlights(
+        Array.isArray(t.highlights)
+          ? t.highlights
+          : String(t.highlights || '').split(',').map(s => s.trim()).filter(Boolean),
+      );
       if (t.folderPath) {
         setExistingZipMeta({
           folderPath: t.folderPath,
@@ -447,6 +483,12 @@ export default function TemplateForm() {
     e.preventDefault();
     if (languages.length === 0) { toast('Select at least one language', 'error'); return; }
 
+    const badLabels = labelsWithTokens({ people, customFields, mediaSlots, functionFields });
+    if (badLabels.length) {
+      toast(`Remove {{ }} from the form label on: ${badLabels.join(', ')}`, 'error');
+      return;
+    }
+
     setSaving(true);
     try {
       const demoPayload = buildDemoPayload();
@@ -468,6 +510,8 @@ export default function TemplateForm() {
     // '' clears it back to the global default; the backend treats blank as null.
     fd.append('markupMultiplier', markupMultiplier === '' ? '' : String(Number(markupMultiplier)));
         fd.append('aboutText',    aboutText);
+        fd.append('shortDescription', shortDescription);
+        fd.append('highlights',   highlights.join(', '));
         if (desktopThumbFile) fd.append('desktopThumbnailImage', desktopThumbFile);
         if (mobileThumbFile) fd.append('mobileThumbnailImage', mobileThumbFile);
 
@@ -512,6 +556,8 @@ export default function TemplateForm() {
     // '' clears it back to the global default; the backend treats blank as null.
     fd.append('markupMultiplier', markupMultiplier === '' ? '' : String(Number(markupMultiplier)));
         fd.append('aboutText',    aboutText);
+        fd.append('shortDescription', shortDescription);
+        fd.append('highlights',   highlights.join(', '));
         fd.append('demoData',     JSON.stringify(demoPayload));
         fd.append('templateZip',  zipFile);
         if (desktopThumbFile) fd.append('desktopThumbnailImage', desktopThumbFile);
@@ -854,6 +900,60 @@ export default function TemplateForm() {
               <label className="form-label">Description Text <span className="req">*</span></label>
               <textarea className="form-textarea" rows={3} value={aboutText} onChange={e => setAboutText(e.target.value)} required placeholder="2-3 sentences describing this template..." />
             </div>
+
+            {/* Card sentence: without it, every card for a community reads the same. */}
+            <div className="form-group">
+              <label className="form-label">Short description <span className="form-hint-inline">(gallery cards & product page)</span></label>
+              <textarea
+                className="form-textarea"
+                rows={2}
+                maxLength={300}
+                value={shortDescription}
+                onChange={e => setShortDescription(e.target.value)}
+                placeholder="One sentence that says what makes this design different — 15 to 25 words."
+              />
+              <div className="form-hint" style={{ color: shortDescWords && (shortDescWords < 15 || shortDescWords > 25) ? '#b26b00' : undefined }}>
+                {shortDescWords} {shortDescWords === 1 ? 'word' : 'words'}
+                {shortDescWords === 0
+                  ? ' — optional, but the card falls back to the description above.'
+                  : shortDescWords < 15 ? ' — aim for 15–25.'
+                  : shortDescWords > 25 ? ' — aim for 15–25.'
+                  : ' — good length.'}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Highlights <span className="form-hint-inline">(capability chips on the card)</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {TEMPLATE_HIGHLIGHTS.map(h => {
+                  const on = highlights.includes(h);
+                  return (
+                    <label
+                      key={h}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '6px 12px', borderRadius: 99, cursor: 'pointer',
+                        fontSize: '0.82rem',
+                        border: `1px solid ${on ? 'var(--accent, #2563eb)' : 'var(--border-subtle, #ddd)'}`,
+                        background: on ? 'var(--accent-light, #e8f4fd)' : 'transparent',
+                        color: on ? 'var(--accent, #2563eb)' : 'var(--text-secondary, inherit)',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => setHighlights(prev => (
+                          prev.includes(h) ? prev.filter(x => x !== h) : [...prev, h]
+                        ))}
+                        style={{ margin: 0 }}
+                      />
+                      {h}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="form-hint">Only tick what this design actually does — these appear as claims on the store.</div>
+            </div>
           </div>
         </div>
 
@@ -968,6 +1068,11 @@ export default function TemplateForm() {
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Form label</label>
                     <input className="form-input" value={p.label} onChange={e => updatePerson(i, 'label', e.target.value)} placeholder="Bride Name, Host Name..." />
+                    {LABEL_TOKEN_RE.test(p.label || '') && (
+                      <div className="form-hint" style={{ color: '#b42318' }}>
+                        Customers see this text exactly — remove the {'{{ }}'} variable.
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="form-row">
@@ -1014,6 +1119,11 @@ export default function TemplateForm() {
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Form label</label>
                     <input className="form-input" value={cf.label} onChange={e => updateCustomField(i, 'label', e.target.value)} placeholder="Love Story, Hashtag..." />
+                    {LABEL_TOKEN_RE.test(cf.label || '') && (
+                      <div className="form-hint" style={{ color: '#b42318' }}>
+                        Customers see this text exactly — remove the {'{{ }}'} variable.
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="form-row">
@@ -1080,6 +1190,11 @@ export default function TemplateForm() {
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Label (shown to user)</label>
                     <input className="form-input" value={row.label} onChange={(e) => updateMediaSlot(i, 'label', e.target.value)} placeholder="Ganesh Ji image" />
+                    {LABEL_TOKEN_RE.test(row.label || '') && (
+                      <div className="form-hint" style={{ color: '#b42318' }}>
+                        Customers see this text exactly — remove the {'{{ }}'} variable.
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="form-row">

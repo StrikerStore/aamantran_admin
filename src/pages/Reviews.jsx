@@ -251,6 +251,11 @@ export default function Reviews() {
       )}
 
       {/* Reviews table */}
+      <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+        Reviews you write here are shown on the store labelled “Added by the Aamantran team”.
+        They never count toward a template’s star rating or review count — only
+        customer-submitted reviews do.
+      </p>
       {refreshing && <div className="refresh-bar" />}
       <div className={`table-container${refreshing ? ' is-refreshing' : ''}`}>
         {loading ? (
@@ -314,7 +319,7 @@ export default function Reviews() {
                       background: r.isAdminCreated ? 'var(--accent-light, #e8f4fd)' : 'var(--surface-2, #f5f5f5)',
                       color: r.isAdminCreated ? 'var(--accent, #2563eb)' : 'var(--text-muted)',
                     }}>
-                      {r.isAdminCreated ? 'Admin' : 'Customer'}
+                      {r.isAdminCreated ? 'Curated' : 'Customer'}
                     </span>
                   </td>
                   <td>

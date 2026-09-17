@@ -91,3 +91,12 @@ export const LANGUAGES = [
   { code: 'ml', label: 'Malayalam' },
   { code: 'ta', label: 'Tamil' },
 ];
+
+// ── Storefront highlights ─────────────────────────────────────────────────────
+// Capability chips shown on gallery cards and the product page.
+// Keep in sync with aamantran_backend/src/lib/constants.js TEMPLATE_HIGHLIGHTS —
+// the backend drops any value it does not recognise.
+export const TEMPLATE_HIGHLIGHTS = [
+  'Countdown', 'Photo gallery', 'Background music', 'Video',
+  'Maps & directions', 'Multi-ceremony', 'Bilingual', 'RSVP', 'Guest wishes',
+];
