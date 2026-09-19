@@ -62,7 +62,10 @@ export default function TransactionDetail() {
               View User
             </Button>
           )}
-          {tx.status === 'paid' && tx.payuMihpayid && (
+          {/* Refundable once the gateway has given us a payment reference,
+              whichever gateway that was. Gating this on the PayU column alone
+              used to hide the button on every Razorpay order. */}
+          {tx.status === 'paid' && (tx.gatewayPaymentId || tx.payuMihpayid) && (
             <Button variant="danger" onClick={() => setConfirm(true)}>
               Issue Refund
             </Button>
@@ -109,8 +112,15 @@ export default function TransactionDetail() {
                   )}
                   <tr><td>Template</td><td>{tx.template?.name || '—'}</td></tr>
                   <tr><td>Date</td><td>{formatDateTime(tx.createdAt)}</td></tr>
-                  <tr><td>PayU Txn ID</td><td><span className="mono">{tx.payuTxnId || '—'}</span></td></tr>
-                  <tr><td>PayU Mihpayid</td><td><span className="mono">{tx.payuMihpayid || '—'}</span></td></tr>
+                  <tr><td>Gateway</td><td>{tx.gateway === 'razorpay' ? 'Razorpay' : 'PayU'}</td></tr>
+                  <tr>
+                    <td>{tx.gateway === 'razorpay' ? 'Razorpay order' : 'PayU Txn ID'}</td>
+                    <td><span className="mono">{tx.gatewayOrderId || tx.payuTxnId || '—'}</span></td>
+                  </tr>
+                  <tr>
+                    <td>{tx.gateway === 'razorpay' ? 'Razorpay payment' : 'PayU Mihpayid'}</td>
+                    <td><span className="mono">{tx.gatewayPaymentId || tx.payuMihpayid || '—'}</span></td>
+                  </tr>
                 </tbody>
               </table>
             </div>

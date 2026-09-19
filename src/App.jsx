@@ -28,6 +28,7 @@ const BlogEditor         = lazy(() => import('./pages/BlogEditor'));
 const Testing            = lazy(() => import('./pages/Testing'));
 const Developers         = lazy(() => import('./pages/Developers'));
 const PricingSettings    = lazy(() => import('./pages/PricingSettings'));
+const PaymentSettings    = lazy(() => import('./pages/PaymentSettings'));
 
 function ProtectedRoute({ children }) {
   const location = useLocation();
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="testing"                element={<Suspense fallback={<RouteFallback />}><Testing /></Suspense>} />
             <Route path="developers"             element={<Suspense fallback={<RouteFallback />}><Developers /></Suspense>} />
             <Route path="settings/pricing"       element={<Suspense fallback={<RouteFallback />}><PricingSettings /></Suspense>} />
+            <Route path="settings/payments"      element={<Suspense fallback={<RouteFallback />}><PaymentSettings /></Suspense>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

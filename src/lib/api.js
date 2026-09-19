@@ -139,6 +139,10 @@ export const api = {
     // Never cached: the whole point is to see what a rate change would do
     // before committing it.
     previewPricing: (params) => request('GET', '/settings/pricing/preview', { params }),
+    // Never cached: which gateway is live is the one thing this page must not
+    // show stale.
+    getGateway:     ()       => request('GET', '/settings/gateway'),
+    updateGateway:  (body)   => request('PUT', '/settings/gateway', { body }),
   },
 
   users: {

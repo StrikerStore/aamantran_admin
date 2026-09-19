@@ -29,6 +29,7 @@ const TITLES = [
   [/^\/blog\/[^/]+\/edit/,        'Edit Post'],
   [/^\/blog/,                     'Blog'],
   [/^\/settings\/pricing/,         'Pricing Settings'],
+  [/^\/settings\/payments/,        'Payment Settings'],
   [/^\/testing/,                  'Testing'],
   [/^\/developers/,               'Template Developers'],
 ];
@@ -76,6 +77,7 @@ const NAV = [
     section: 'Internal',
     items: [
       { label: 'Pricing',    to: '/settings/pricing', icon: IconCard },
+      { label: 'Payments',   to: '/settings/payments', icon: IconCard },
       { label: 'Testing',    to: '/testing',    icon: IconFlask },
       { label: 'Developers', to: '/developers', icon: IconCode },
     ],
