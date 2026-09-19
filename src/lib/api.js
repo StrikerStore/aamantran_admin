@@ -109,6 +109,44 @@ async function request(method, path, { body, multipart = false, params, cache = 
   return json;
 }
 
+/**
+ * Downloads a file the API returns as a file, not as JSON.
+ *
+ * `request` above always parses the body as JSON, and a CSV is not JSON. This
+ * also cannot be a plain link: the panel authenticates with a bearer token, and
+ * a browser navigation carries no header — so the file is fetched, held as a
+ * blob and handed to a temporary link.
+ */
+async function download(path, params) {
+  const token = localStorage.getItem('aam_admin_token');
+  const url = API_BASE.startsWith('http')
+    ? new URL(`${API_BASE}${path}`)
+    : new URL(`${API_BASE}${path}`, window.location.origin);
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+    });
+  }
+
+  const res = await fetch(url.toString(), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) throw new ApiError(`Download failed (${res.status})`, res.status, null);
+
+  // The server names the file; the fallback only applies if the header is missing.
+  const disposition = res.headers.get('content-disposition') || '';
+  const named = /filename="?([^"]+)"?/.exec(disposition);
+  const blob = await res.blob();
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = named ? named[1] : 'download.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revoked on the next tick: revoking immediately can cancel the download in
+  // some browsers.
+  setTimeout(() => URL.revokeObjectURL(href), 1000);
+}
+
 export const api = {
   auth: {
     login: (email, password, otp) =>
@@ -169,6 +207,8 @@ export const api = {
     list:   (params) => request('GET',  '/transactions', { params, cache: true }),
     get:    (id)     => request('GET',  `/transactions/${id}`, { cache: true }),
     refund: (id)     => request('POST', `/transactions/${id}/refund`),
+    // The same filters the table is showing, so an export always matches it.
+    exportCsv: (params) => download('/transactions/export', params),
   },
 
   tickets: {
@@ -198,6 +238,9 @@ export const api = {
   analytics: {
     summary: (params) => request('GET', '/analytics/summary', { params }),
     live:    (params) => request('GET', '/analytics/live', { params }),
+    // What was sold, for the dashboard. Uncached: the overview should not open
+    // on figures from half a minute ago.
+    business: (params) => request('GET', '/analytics/business', { params }),
   },
 
   // Master template-testing account. `status` is deliberately uncached — the

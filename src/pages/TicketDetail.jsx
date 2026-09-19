@@ -5,6 +5,7 @@ import { formatDateTime, formatRelative, formatPhone } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 
 /** How often an open thread checks for new messages. */
 const POLL_MS = 5000;
@@ -161,11 +162,7 @@ export default function TicketDetail() {
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
-      <div className="breadcrumb">
-        <a href="#" onClick={e => { e.preventDefault(); navigate('/tickets'); }}>Support Tickets</a>
-        <span className="breadcrumb-sep">›</span>
-        <span>{ticket.subject}</span>
-      </div>
+      <Breadcrumb current={ticket.subject} />
 
       <div className="page-header">
         <div className="page-header-left">

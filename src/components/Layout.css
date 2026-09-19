@@ -557,6 +557,48 @@ a.nav-item:nth-of-type(4n+4).active::before { background: var(--peach); }
   .dash-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Dashboard: things waiting for someone ── */
+.dash-attention {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.dash-attention-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: border-color var(--t-fast), transform var(--t-fast);
+  font: inherit;
+  color: inherit;
+}
+.dash-attention-item:hover { border-color: var(--gold); transform: translateY(-1px); }
+.dash-attention-item:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Only a count that is actually waiting on someone is coloured; a calm zero
+   stays neutral so the colour keeps meaning something. */
+.dash-attention-item.is-urgent { border-color: var(--rose, #e05260); }
+.dash-attention-item.is-urgent .dash-attention-count { color: var(--rose, #e05260); }
+
+.dash-attention-count { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+.dash-attention-label { font-size: 0.85rem; color: var(--text-secondary); }
+.dash-attention-detail { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+.dash-orderline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 .dash-error {
   background: var(--peach-soft);
   color: var(--peach-deep);
@@ -704,6 +746,17 @@ tbody tr.clickable { cursor: pointer; }
 
 .filter-select:focus { border-color: var(--gold); box-shadow: var(--focus-ring), inset 2px 2px 5px rgba(108,92,231,0.08); }
 .filter-select option { background: var(--bg-surface); color: var(--text-primary); }
+
+/* Search and dates sit in the same bar as the dropdowns. The search takes the
+   spare width down to a floor, so a seven-control bar wraps instead of
+   squeezing every field to uselessness. */
+.filter-search { flex: 1 1 260px; min-width: 200px; }
+.filter-date { flex: 0 0 auto; width: 152px; }
+
+@media (max-width: 720px) {
+  .filter-search { flex-basis: 100%; }
+  .filter-date { flex: 1 1 140px; width: auto; }
+}
 
 /* ── Form ── */
 .form-group { margin-bottom: 20px; }

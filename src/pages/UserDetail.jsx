@@ -15,6 +15,7 @@ import PhoneField from '../components/PhoneField';
 import { Modal, ConfirmModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import { AdminInviteModal, EditEventModal } from './InvitationModals';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 
 export default function UserDetail() {
   const navigate = useNavigate();
@@ -92,11 +93,7 @@ export default function UserDetail() {
 
   return (
     <div className={refreshing ? 'is-refreshing' : undefined}>
-      <div className="breadcrumb">
-        <a href="#" onClick={(e) => { e.preventDefault(); navigate('/users'); }}>Users</a>
-        <span className="breadcrumb-sep">›</span>
-        <span>{user.username || user.email}</span>
-      </div>
+      <Breadcrumb current={user.username || user.email} />
 
       <div className="page-header">
         <div className="page-header-left">

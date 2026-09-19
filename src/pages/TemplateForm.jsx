@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { CollapsibleCard } from '../components/ui/CollapsibleCard';
 import { useToast } from '../components/ui/Toast';
 import { toHtmlDateInputValue } from '../utils/dateNormalize';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 
 // ── Default function field config ────────────────────────────────────────────
 const DEFAULT_FUNCTION_FIELDS = {
@@ -642,11 +643,7 @@ export default function TemplateForm() {
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
-      <div className="breadcrumb">
-        <a href="#" onClick={e => { e.preventDefault(); navigate('/templates'); }}>Templates</a>
-        <span className="breadcrumb-sep">›</span>
-        <span>{isEdit ? 'Edit' : 'Add'} Template</span>
-      </div>
+      <Breadcrumb />
 
       <div className="page-header">
         <div className="page-header-left">

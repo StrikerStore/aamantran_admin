@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { ConfirmModal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 
 export default function TransactionDetail() {
   const navigate = useNavigate();
@@ -45,11 +46,7 @@ export default function TransactionDetail() {
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
-      <div className="breadcrumb">
-        <a href="#" onClick={e => { e.preventDefault(); navigate('/transactions'); }}>Transactions</a>
-        <span className="breadcrumb-sep">›</span>
-        <span className="mono">{id.slice(0, 8)}…</span>
-      </div>
+      <Breadcrumb current={tx.orderId || `${id.slice(0, 8)}…`} />
 
       <div className="page-header">
         <div className="page-header-left">
