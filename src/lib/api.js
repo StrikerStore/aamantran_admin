@@ -117,7 +117,7 @@ async function request(method, path, { body, multipart = false, params, cache = 
  * a browser navigation carries no header — so the file is fetched, held as a
  * blob and handed to a temporary link.
  */
-async function download(path, params) {
+async function download(path, params, fallbackName = 'download.csv') {
   const token = localStorage.getItem('aam_admin_token');
   const url = API_BASE.startsWith('http')
     ? new URL(`${API_BASE}${path}`)
@@ -129,7 +129,15 @@ async function download(path, params) {
   }
 
   const res = await fetch(url.toString(), { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-  if (!res.ok) throw new ApiError(`Download failed (${res.status})`, res.status, null);
+  if (!res.ok) {
+    // A refusal is JSON even though a success is not, and its message is the
+    // whole point — "more than the 10,000-row limit, ask for a shorter range"
+    // is useless if the panel only shows the status number.
+    const text = await res.text().catch(() => '');
+    let body = null;
+    if (text) { try { body = JSON.parse(text); } catch { /* not JSON: keep the generic message */ } }
+    throw new ApiError(body?.message || `Download failed (${res.status})`, res.status, body);
+  }
 
   // The server names the file; the fallback only applies if the header is missing.
   const disposition = res.headers.get('content-disposition') || '';
@@ -138,7 +146,7 @@ async function download(path, params) {
   const href = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = href;
-  a.download = named ? named[1] : 'download.csv';
+  a.download = named ? named[1] : fallbackName;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -209,6 +217,9 @@ export const api = {
     refund: (id)     => request('POST', `/transactions/${id}/refund`),
     // The same filters the table is showing, so an export always matches it.
     exportCsv: (params) => download('/transactions/export', params),
+    // The GST filing file. Its date range is its own on purpose — inheriting the
+    // table's filters would let a forgotten dropdown file a partial return.
+    gstReport: ({ from, to }) => download('/transactions/gst-report', { from, to }, 'gst-report.xlsx'),
   },
 
   tickets: {

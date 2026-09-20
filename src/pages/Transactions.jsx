@@ -6,6 +6,7 @@ import { formatDate, formatMoney, debounce } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Pagination } from '../components/ui/Pagination';
+import { Modal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 
 /**
@@ -43,6 +44,25 @@ function filtersFromUrl() {
   return next;
 }
 
+/**
+ * The last complete calendar month, in IST — which is the month being filed
+ * nearly every time this dialog is opened, so it is what the dates start on.
+ * IST because that is the month the return covers; the server reads the same
+ * two dates the same way.
+ */
+const IST_OFFSET_MS = 330 * 60 * 1000;
+
+function lastCompleteMonthIst(now = new Date()) {
+  const t = new Date(now.getTime() + IST_OFFSET_MS);
+  const year = t.getUTCFullYear();
+  const month = t.getUTCMonth();
+  const py = month === 0 ? year - 1 : year;
+  const pm = month === 0 ? 11 : month - 1;
+  const lastDay = new Date(Date.UTC(py, pm + 1, 0)).getUTCDate();
+  const pad = (n) => String(n).padStart(2, '0');
+  return { from: `${py}-${pad(pm + 1)}-01`, to: `${py}-${pad(pm + 1)}-${pad(lastDay)}` };
+}
+
 export default function Transactions() {
   const navigate = useNavigate();
   const toast    = useToast();
@@ -57,6 +77,10 @@ export default function Transactions() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [gstOpen,  setGstOpen]  = useState(false);
+  const [gstRange, setGstRange] = useState(lastCompleteMonthIst);
+  const [gstBusy,  setGstBusy]  = useState(false);
+  const [gstError, setGstError] = useState('');
   const loadedOnce = useRef(false);
 
   const applyQuery = useMemo(
@@ -103,6 +127,44 @@ export default function Transactions() {
     }
   }
 
+  // Checked here as well as on the server, so an impossible range is refused
+  // before it costs a round trip — not instead of the server checking it.
+  const gstInvalid =
+    !gstRange.from || !gstRange.to
+      ? 'Pick both dates.'
+      : gstRange.from > gstRange.to
+        ? 'The "from" date must not be after the "to" date.'
+        : (Date.parse(gstRange.to) - Date.parse(gstRange.from)) / 86400000 > 365
+          ? 'Ask for a year or less at a time.'
+          : '';
+
+  function openGstDialog() {
+    setGstError('');
+    setGstRange(lastCompleteMonthIst());
+    setGstOpen(true);
+  }
+
+  const setGst = (key) => (e) => {
+    setGstError('');
+    setGstRange((r) => ({ ...r, [key]: e.target.value }));
+  };
+
+  async function downloadGstReport() {
+    setGstBusy(true);
+    setGstError('');
+    try {
+      await api.transactions.gstReport(gstRange);
+      setGstOpen(false);
+      toast('GST report downloaded', 'success');
+    } catch (err) {
+      // Left open on purpose: the answer is almost always a shorter range, and
+      // closing the dialog would make the admin set the dates again to retry.
+      setGstError(err.message || 'Could not build the GST report');
+    } finally {
+      setGstBusy(false);
+    }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -116,6 +178,11 @@ export default function Transactions() {
           {filtered && (
             <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
           )}
+          {/*
+            * Not disabled on an empty table: this report has its own date range
+            * and covers India orders whatever the filters above are showing.
+            */}
+          <Button variant="secondary" onClick={openGstDialog}>GST report</Button>
           <Button variant="secondary" onClick={exportCsv} loading={exporting} disabled={exporting || total === 0}>
             {exporting ? 'Preparing…' : 'Export CSV'}
           </Button>
@@ -254,6 +321,76 @@ export default function Transactions() {
       <div style={{ marginTop: 16 }}>
         <Pagination total={total} page={page} limit={20} onPageChange={setPage} />
       </div>
+
+      {gstOpen && (
+        <Modal
+          title="GST report"
+          onClose={() => { if (!gstBusy) setGstOpen(false); }}
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setGstOpen(false)} disabled={gstBusy}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={downloadGstReport}
+                disabled={gstBusy || Boolean(gstInvalid)}
+              >
+                {gstBusy ? 'Preparing…' : 'Download .xlsx'}
+              </button>
+            </>
+          }
+        >
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="gst-from">From</label>
+              <input
+                id="gst-from"
+                className="form-input"
+                type="date"
+                value={gstRange.from}
+                max={gstRange.to || undefined}
+                onChange={setGst('from')}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="gst-to">To</label>
+              <input
+                id="gst-to"
+                className="form-input"
+                type="date"
+                value={gstRange.to}
+                min={gstRange.from || undefined}
+                onChange={setGst('to')}
+              />
+            </div>
+          </div>
+
+          <p className="form-hint">
+            Both dates are included, and read in IST. India (₹) orders only — the global
+            storefront is an export of services, zero-rated, and is not in this file.
+          </p>
+
+          {/*
+            * One child: .alert is a flex row meant for an icon beside a line of
+            * text, so inline <strong>s would each become a column of their own.
+            */}
+          <div className="alert alert-info" style={{ marginTop: 12, marginBottom: 0 }}>
+            <span>
+              Two sheets: <strong>revenue</strong> (orders sold in this range, including ones
+              refunded later) and <strong>refund</strong> (refunds made in this range).
+              Tax appears as one <strong>IGST</strong> line — no customer state is on file, so
+              it cannot be split into CGST and SGST for a buyer in MP.
+            </span>
+          </div>
+
+          {(gstError || gstInvalid) && (
+            <div className="alert alert-warning" style={{ marginTop: 12, marginBottom: 0 }}>
+              <span>{gstError || gstInvalid}</span>
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }
