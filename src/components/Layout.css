@@ -747,17 +747,6 @@ tbody tr.clickable { cursor: pointer; }
 .filter-select:focus { border-color: var(--gold); box-shadow: var(--focus-ring), inset 2px 2px 5px rgba(108,92,231,0.08); }
 .filter-select option { background: var(--bg-surface); color: var(--text-primary); }
 
-/* Search and dates sit in the same bar as the dropdowns. The search takes the
-   spare width down to a floor, so a seven-control bar wraps instead of
-   squeezing every field to uselessness. */
-.filter-search { flex: 1 1 260px; min-width: 200px; }
-.filter-date { flex: 0 0 auto; width: 152px; }
-
-@media (max-width: 720px) {
-  .filter-search { flex-basis: 100%; }
-  .filter-date { flex: 1 1 140px; width: auto; }
-}
-
 /* ── Form ── */
 .form-group { margin-bottom: 20px; }
 
@@ -816,6 +805,34 @@ tbody tr.clickable { cursor: pointer; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ── Fields inside a filter bar ──
+   Search and dates sit in the same bar as the dropdowns, so they are sized to
+   their content rather than stretched.
+
+   These MUST stay below the .form-* block. A date field is
+   `form-input filter-date`, and both selectors weigh the same — so while these
+   sat above, `.form-input { width: 100% }` won on source order alone and every
+   date field took a whole row of the bar to itself.
+
+   The search grows into whatever is left, up to a cap: uncapped it ate the
+   spare width of a wide screen and pushed the dates onto their own rows. */
+.filter-search { flex: 1 1 240px; min-width: 180px; max-width: 420px; }
+.filter-date { flex: 0 0 auto; width: 148px; }
+
+/* Under about 1400px the sidebar leaves the bar around 1,000px, and the four
+   dropdowns alone want ~580 of it — so seven controls on one row would squeeze
+   the search below the width of anything you would type into it. It wraps on
+   purpose instead: the search takes a line of its own, and the four dropdowns
+   and two dates share the next. A deliberate two rows, rather than six controls
+   and one stray. */
+@media (max-width: 1400px) {
+  .filter-search { flex-basis: 100%; max-width: none; }
+}
+
+@media (max-width: 720px) {
+  .filter-date { flex: 1 1 140px; width: auto; }
+}
 @media (max-width: 600px) { .form-row, .form-row-3 { grid-template-columns: 1fr; } }
 
 /* Toggle */
