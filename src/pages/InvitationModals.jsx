@@ -518,6 +518,11 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
       <Button variant="primary" loading={saving} onClick={handle}>Save changes</Button>
     </>}>
       <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>Edit the invitation data. Admin can edit even if names are frozen.</p>
+      {ev.inviteScope === 'subset' && (
+        <p style={{ ...HINT, color: 'var(--text-primary)' }}>
+          This is a partial invite. It shows the <strong>full invite&apos;s</strong> people and photos, so edit those on the full invite — changes to them here won&apos;t appear to guests.
+        </p>
+      )}
       <div style={{ marginBottom: 8 }}><span style={SEC}>People</span></div>
       <PeopleFields schema={schema} people={people} updPerson={updP} brideName={brideName} setBN={setBN} groomName={groomName} setGN={setGN} />
       <hr className="divider" style={{ margin: '16px 0' }} />
