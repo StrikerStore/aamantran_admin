@@ -1,5 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import {
+  useAnalytics, fmt, cap, StatCard, LegendDot, TwoCol, BreakdownCard, BreakdownRows, Funnel,
+} from './analyticsParts';
+import AnalyticsInsights from './AnalyticsInsights';
+import AnalyticsTrialDemos from './AnalyticsTrialDemos';
 
 // The two websites report into one database, so this picks which storefront's
 // traffic is on screen. '' means both combined.
@@ -16,6 +21,14 @@ const PRESETS = [
   { label: '90 days', days: 89 },
 ];
 
+const TABS = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'insights', label: 'Campaign insights' },
+  { key: 'trial',    label: 'Try-it demos' },
+];
+
+const TAB_STORAGE_KEY = 'aam_admin_analytics_tab';
+
 const STAGE_LABELS = {
   Visitors: 'Visited website',
   view_template: 'Viewed a template',
@@ -24,64 +37,31 @@ const STAGE_LABELS = {
   register_complete: 'Created account',
 };
 
-function isoDay(d) {
-  return d.toISOString().slice(0, 10);
+function readTab() {
+  try {
+    const saved = localStorage.getItem(TAB_STORAGE_KEY);
+    return TABS.some((t) => t.key === saved) ? saved : 'overview';
+  } catch {
+    return 'overview';
+  }
 }
 
 export default function Analytics() {
   const [days, setDays] = useState(29);
   const [storefront, setStorefront] = useState('');
-  const [data, setData] = useState(null);
-  const [live, setLive] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
-  const loadedOnce = useRef(false);
+  const [tab, setTab] = useState(readTab);
 
-  // Switching date preset keeps the current charts on screen and dims them,
-  // rather than blanking the page back to a spinner.
-  useEffect(() => {
-    if (loadedOnce.current) setRefreshing(true); else setLoading(true);
-    setError('');
-    const to = new Date();
-    const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    api.analytics.summary({ from: isoDay(from), to: isoDay(to), ...(storefront ? { storefront } : {}) })
-      .then(setData)
-      .catch(e => setError(e.message || 'Failed to load analytics'))
-      .finally(() => {
-        setLoading(false);
-        setRefreshing(false);
-        loadedOnce.current = true;
-      });
-  }, [days, storefront]);
-
-  // Live visitors refresh every 30s — but only while the tab is actually
-  // visible. It used to keep polling in a background tab indefinitely.
-  useEffect(() => {
-    const load = () => {
-      if (document.visibilityState !== 'visible') return;
-      api.analytics.live(storefront ? { storefront } : undefined).then(setLive).catch(() => {});
-    };
-    load();
-    const t = setInterval(load, 30000);
-    document.addEventListener('visibilitychange', load);
-    return () => {
-      clearInterval(t);
-      document.removeEventListener('visibilitychange', load);
-    };
-    // Re-subscribe when the storefront filter changes, or the live count would
-    // keep reporting whichever site was selected when the page first mounted.
-  }, [storefront]);
-
-  const ov = data?.overview;
-  const liveCount = live?.liveVisitors ?? ov?.liveVisitors ?? 0;
+  const chooseTab = (key) => {
+    setTab(key);
+    try { localStorage.setItem(TAB_STORAGE_KEY, key); } catch { /* private window */ }
+  };
 
   return (
     <div>
       <div className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">Website Analytics</h1>
-          <p className="page-subtitle">First-party traffic, sources and conversion funnel</p>
+          <p className="page-subtitle">Traffic, what sells, and what to do next</p>
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -109,6 +89,54 @@ export default function Analytics() {
         </div>
       </div>
 
+      <div role="tablist" aria-label="Analytics views" style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
+            className={`btn ${tab === t.key ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => chooseTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'overview' && <Overview days={days} storefront={storefront} />}
+      {tab === 'insights' && <AnalyticsInsights days={days} storefront={storefront} />}
+      {tab === 'trial' && <AnalyticsTrialDemos days={days} storefront={storefront} />}
+    </div>
+  );
+}
+
+function Overview({ days, storefront }) {
+  const { data, loading, refreshing, error } = useAnalytics(api.analytics.summary, days, storefront);
+  const [live, setLive] = useState(null);
+
+  // Live visitors refresh every 30s — but only while the tab is actually
+  // visible. It used to keep polling in a background tab indefinitely.
+  useEffect(() => {
+    const load = () => {
+      if (document.visibilityState !== 'visible') return;
+      api.analytics.live(storefront ? { storefront } : undefined).then(setLive).catch(() => {});
+    };
+    load();
+    const t = setInterval(load, 30000);
+    document.addEventListener('visibilitychange', load);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', load);
+    };
+    // Re-subscribe when the storefront filter changes, or the live count would
+    // keep reporting whichever site was selected when the page first mounted.
+  }, [storefront]);
+
+  const ov = data?.overview;
+  const liveCount = live?.liveVisitors ?? ov?.liveVisitors ?? 0;
+
+  return (
+    <>
       {error && <div className="card" style={{ padding: 20, color: 'var(--rose, #b42318)' }}>{error}</div>}
       {loading && <div className="spinner-wrap"><div className="spinner" /></div>}
       {refreshing && <div className="refresh-bar" />}
@@ -148,26 +176,28 @@ export default function Analytics() {
           {/* Funnel */}
           <div className="card" style={{ marginBottom: 24 }}>
             <div className="card-header"><span className="card-title">Invitation creation funnel</span></div>
-            <Funnel funnel={data.funnel} paidOrders={ov.paidOrders} />
+            <Funnel
+              steps={data.funnel.map((f) => ({ label: STAGE_LABELS[f.stage] || f.stage, count: f.sessions }))}
+              note="Percentages show conversion from the previous step. “Completed payment” counts tracked sessions — see Paid Orders above for the authoritative payment count."
+            />
           </div>
 
           {/* Breakdowns */}
           <TwoCol>
-            <BreakdownCard title="Traffic Sources" rows={data.sources.map(s => [s.label, s.count])} valueLabel="Visitors" />
-            <BreakdownCard title="Top Pages" rows={data.pages.map(p => [p.path, p.views])} valueLabel="Views" mono />
+            <BreakdownCard title="Traffic Sources" rows={data.sources.map(s => [s.label, s.count])} />
+            <BreakdownCard title="Top Pages" rows={data.pages.map(p => [p.path, p.views])} mono />
           </TwoCol>
           <TwoCol>
-            <BreakdownCard title="Countries" rows={data.geo.countries.map(c => [c.label, c.count])} valueLabel="Visitors" />
+            <BreakdownCard title="Countries" rows={data.geo.countries.map(c => [c.label, c.count])} />
             <BreakdownCard
               title="Cities"
               rows={data.geo.cities.map(c => [[c.city, c.region, c.country].filter(Boolean).join(', '), c.count])}
-              valueLabel="Visitors"
               emptyHint="City/region needs the free “visitor location headers” transform enabled in Cloudflare."
             />
           </TwoCol>
           <TwoCol>
-            <BreakdownCard title="Devices" rows={data.devices.map(d => [cap(d.label), d.count])} valueLabel="Visitors" />
-            <BreakdownCard title="Browsers" rows={data.browsers.map(b => [b.label, b.count])} valueLabel="Visitors" />
+            <BreakdownCard title="Devices" rows={data.devices.map(d => [cap(d.label), d.count])} />
+            <BreakdownCard title="Browsers" rows={data.browsers.map(b => [b.label, b.count])} />
           </TwoCol>
 
           {/* Live pages */}
@@ -179,38 +209,12 @@ export default function Analytics() {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
-/* ── helpers ── */
-
-function fmt(n) {
-  return Number(n ?? 0).toLocaleString('en-IN');
-}
-function cap(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-}
 function stage(data, name) {
   return data.funnel.find(f => f.stage === name)?.sessions ?? 0;
-}
-
-function StatCard({ label, value, accent }) {
-  return (
-    <div className="stat-card">
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-      <div className="stat-accent" style={{ background: accent }} />
-    </div>
-  );
-}
-
-function LegendDot({ color }) {
-  return <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: color, marginRight: 5, verticalAlign: 'middle' }} />;
-}
-
-function TwoCol({ children }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, marginBottom: 24 }}>{children}</div>;
 }
 
 function TimeseriesChart({ series }) {
@@ -228,68 +232,6 @@ function TimeseriesChart({ series }) {
         >
           <div style={{ height: `${(d.pageViews / max) * 100}%`, background: 'var(--lav, #8b8bd9)', borderRadius: '3px 3px 0 0', opacity: 0.45, minHeight: d.pageViews ? 2 : 0 }} />
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${(d.visitors / max) * 100}%`, background: 'var(--mint, #4cc38a)', borderRadius: '3px 3px 0 0', minHeight: d.visitors ? 2 : 0 }} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Funnel({ funnel }) {
-  const base = funnel[0]?.sessions || 0;
-  return (
-    <div style={{ padding: '14px 16px' }}>
-      {funnel.map((f, i) => {
-        const prev = i === 0 ? f.sessions : funnel[i - 1].sessions;
-        const pctOfBase = base ? (f.sessions / base) * 100 : 0;
-        const pctOfPrev = prev ? Math.round((f.sessions / prev) * 100) : 0;
-        return (
-          <div key={f.stage} style={{ display: 'grid', gridTemplateColumns: '170px 1fr 130px', gap: 12, alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontSize: '0.85rem' }}>{STAGE_LABELS[f.stage] || f.stage}</div>
-            <div style={{ background: 'var(--bg-subtle, #f2f2f7)', borderRadius: 6, height: 26, overflow: 'hidden' }}>
-              <div style={{ width: `${Math.max(pctOfBase, f.sessions > 0 ? 2 : 0)}%`, height: '100%', background: 'linear-gradient(90deg, var(--lav, #8b8bd9), var(--mint, #4cc38a))', borderRadius: 6 }} />
-            </div>
-            <div style={{ fontSize: '0.82rem', textAlign: 'right' }}>
-              <strong>{fmt(f.sessions)}</strong>
-              {i > 0 && <span style={{ color: 'var(--text-muted)' }}> · {pctOfPrev}%</span>}
-            </div>
-          </div>
-        );
-      })}
-      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
-        Percentages show conversion from the previous step. “Completed payment” counts tracked sessions — see Paid Orders above for the authoritative payment count.
-      </p>
-    </div>
-  );
-}
-
-function BreakdownCard({ title, rows, valueLabel, mono, emptyHint }) {
-  return (
-    <div className="card">
-      <div className="card-header"><span className="card-title">{title}</span></div>
-      {rows.length === 0 ? (
-        <div className="empty-state" style={{ padding: 24 }}>
-          <div className="empty-text">{emptyHint || 'No data yet'}</div>
-        </div>
-      ) : (
-        <BreakdownRows rows={rows} valueLabel={valueLabel} mono={mono} />
-      )}
-    </div>
-  );
-}
-
-function BreakdownRows({ rows, mono }) {
-  const max = Math.max(...rows.map(r => r[1]), 1);
-  return (
-    <div style={{ padding: '8px 16px 14px' }}>
-      {rows.map(([label, count]) => (
-        <div key={label} style={{ display: 'grid', gridTemplateColumns: '1fr 70px', gap: 10, alignItems: 'center', padding: '5px 0' }}>
-          <div style={{ position: 'relative', minHeight: 22, display: 'flex', alignItems: 'center' }}>
-            <div style={{ position: 'absolute', inset: 0, width: `${(count / max) * 100}%`, background: 'var(--lav, #8b8bd9)', opacity: 0.14, borderRadius: 4 }} />
-            <span style={{ position: 'relative', fontSize: '0.84rem', padding: '0 8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: mono ? 'ui-monospace, monospace' : undefined }}>
-              {label}
-            </span>
-          </div>
-          <div style={{ fontSize: '0.84rem', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt(count)}</div>
         </div>
       ))}
     </div>

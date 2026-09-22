@@ -252,6 +252,10 @@ export const api = {
     // What was sold, for the dashboard. Uncached: the overview should not open
     // on figures from half a minute ago.
     business: (params) => request('GET', '/analytics/business', { params }),
+    // Campaign planning: channels, designs, timing and written findings.
+    insights: (params) => request('GET', '/analytics/insights', { params }),
+    // Try-it demos: live now, the last day, and history.
+    trialDemos: (params) => request('GET', '/analytics/trial-demos', { params }),
   },
 
   // Master template-testing account. `status` is deliberately uncached — the
