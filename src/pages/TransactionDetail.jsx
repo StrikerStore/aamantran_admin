@@ -147,7 +147,7 @@ export default function TransactionDetail() {
               <div className="card-body">
                 <table className="kv-table">
                   <tbody>
-                    <tr><td>Couple</td><td>{[tx.event.brideName, tx.event.groomName].filter(Boolean).join(' & ') || '—'}</td></tr>
+                    <tr><td>Couple</td><td>{[tx.event.person1Name, tx.event.person2Name].filter(Boolean).join(' & ') || '—'}</td></tr>
                     <tr><td>Slug</td><td><span className="mono">/{tx.event.slug}</span></td></tr>
                     <tr><td>Published</td><td><Badge status={tx.event.isPublished ? 'active' : 'draft'} /></td></tr>
                   </tbody>

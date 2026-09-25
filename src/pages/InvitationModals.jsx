@@ -30,15 +30,28 @@ function buildFnPayload(functions, toast) {
   return out;
 }
 
-function deriveBrideGroom(people, fallbackBride, fallbackGroom) {
+function deriveCouple(people, fallback1, fallback2) {
   return {
-    bride: people.find(p => p.role === 'bride')?.name || fallbackBride || people[0]?.name || '',
-    groom: people.find(p => p.role === 'groom')?.name || fallbackGroom || people[1]?.name || '',
+    person1: people.find(p => p.role === 'person1')?.name || fallback1 || people[0]?.name || '',
+    person2: people.find(p => p.role === 'person2')?.name || fallback2 || people[1]?.name || '',
   };
 }
 
+/** Everything the couple stored on a person (their Bride/Groom-style choice among it) goes back as it was. */
 function personPayload(people, schema) {
-  return people.filter(p => p.name?.trim()).map((p, i) => ({ role: p.role, name: p.name, photoUrl: p.photoUrl || null, sortOrder: i }));
+  return people.filter(p => p.name?.trim()).map((p, i) => {
+    const extraData = { ...(p.extraData || {}) };
+    if (p.roleChoice) extraData.role_choice = p.roleChoice;
+    else delete extraData.role_choice;
+    return {
+      role: p.role, name: p.name, photoUrl: p.photoUrl || null, sortOrder: i,
+      extraData: Object.keys(extraData).length ? extraData : null,
+    };
+  });
+}
+
+function roleOptionsOf(sp) {
+  return Array.isArray(sp?.roleOptions) ? sp.roleOptions.filter(Boolean) : [];
 }
 
 function cfPayload(customFields, schema) {
@@ -194,23 +207,29 @@ function AdminMediaSlotCard({ userId, eventId, slot, slotItems, refreshMedia, on
   );
 }
 
-function PeopleFields({ schema, people, updPerson, brideName, setBN, groomName, setGN }) {
+function PeopleFields({ schema, people, updPerson, person1Name, setP1, person2Name, setP2 }) {
   if (schema?.people?.length) {
     return schema.people.map(sp => {
-      const p = people.find(x => x.role === sp.role) || { name: '', photoUrl: '' };
+      const p = people.find(x => x.role === sp.role) || { name: '', photoUrl: '', roleChoice: '' };
+      const options = roleOptionsOf(sp);
       return (<div key={sp.role} style={CARD}>
         <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>{sp.label || sp.role} {sp.required && <span className="req">*</span>}</div>
         <div className="form-row">
           <div className="form-group" style={{ marginBottom: 8 }}><label className="form-label">Name</label>
             <input className="form-input" value={p.name} onChange={e => updPerson(sp.role, 'name', e.target.value)} placeholder={sp.label || sp.role} /></div>
+          {options.length > 0 && <div className="form-group" style={{ marginBottom: 8 }}><label className="form-label">Role</label>
+            <select className="form-input" value={p.roleChoice || ''} onChange={e => updPerson(sp.role, 'roleChoice', e.target.value)}>
+              <option value="">— not set —</option>
+              {options.map(o => <option key={o} value={o}>{o}</option>)}
+            </select></div>}
           {sp.photo && <div className="form-group" style={{ marginBottom: 8 }}><label className="form-label">Photo URL</label>
             <input className="form-input" value={p.photoUrl || ''} onChange={e => updPerson(sp.role, 'photoUrl', e.target.value)} placeholder="https://..." /></div>}
         </div></div>);
     });
   }
   return (<div className="form-row">
-    <div className="form-group"><label className="form-label">Host / Person 1</label><input className="form-input" value={brideName} onChange={e => setBN(e.target.value)} placeholder="Optional" /></div>
-    <div className="form-group"><label className="form-label">Host / Person 2</label><input className="form-input" value={groomName} onChange={e => setGN(e.target.value)} placeholder="Optional" /></div>
+    <div className="form-group"><label className="form-label">Host / Person 1</label><input className="form-input" value={person1Name} onChange={e => setP1(e.target.value)} placeholder="Optional" /></div>
+    <div className="form-group"><label className="form-label">Host / Person 2</label><input className="form-input" value={person2Name} onChange={e => setP2(e.target.value)} placeholder="Optional" /></div>
   </div>);
 }
 
@@ -285,8 +304,8 @@ export function AdminInviteModal({ userId, user, onClose, onSuccess }) {
   const [schema, setSchema] = useState(null);
   const [people, setPeople] = useState([]);
   const [customFields, setCF] = useState([]);
-  const [brideName, setBN] = useState('');
-  const [groomName, setGN] = useState('');
+  const [person1Name, setP1] = useState('');
+  const [person2Name, setP2] = useState('');
   const [eventType, setET] = useState('wedding');
   const [community, setCom] = useState('universal');
   const [language, setLang] = useState('en');
@@ -304,7 +323,7 @@ export function AdminInviteModal({ userId, user, onClose, onSuccess }) {
     api.templates.get(tplId).then(res => {
       const fs = res.data?.fieldSchema || null;
       setSchema(fs);
-      setPeople(fs?.people?.length ? fs.people.map(p => ({ role: p.role, name: '', photoUrl: '' })) : []);
+      setPeople(fs?.people?.length ? fs.people.map(p => ({ role: p.role, name: '', photoUrl: '', roleChoice: '' })) : []);
       setCF(fs?.customFields?.length ? fs.customFields.map(c => ({ key: c.key, value: '' })) : []);
     }).catch(() => setSchema(null));
   }, [paymentId, templateId, has]); // eslint-disable-line
@@ -321,11 +340,11 @@ export function AdminInviteModal({ userId, user, onClose, onSuccess }) {
     if (!fnP) return;
     const subIdx = []; functions.forEach((fn, i) => { if (fn.includePartial) subIdx.push(i); });
     if (subIdx.length < 1) { toast('Select at least one function for the partial invitation', 'error'); return; }
-    const d = deriveBrideGroom(people, brideName, groomName);
+    const d = deriveCouple(people, person1Name, person2Name);
     setSaving(true);
     try {
       await api.users.generateInvites(userId, {
-        ...(has ? { paymentId } : { templateId }), brideName: d.bride.trim() || undefined, groomName: d.groom.trim() || undefined,
+        ...(has ? { paymentId } : { templateId }), person1Name: d.person1.trim() || undefined, person2Name: d.person2.trim() || undefined,
         eventType, community, language, ...(slugFull.trim() ? { slugFull: slugFull.trim() } : {}), ...(slugSubset.trim() ? { slugSubset: slugSubset.trim() } : {}),
         functions: fnP, subsetFunctionIndices: subIdx, people: personPayload(people, schema), customFields: cfPayload(customFields, schema),
       });
@@ -364,7 +383,7 @@ export function AdminInviteModal({ userId, user, onClose, onSuccess }) {
       </div>
       <hr className="divider" style={{ margin: '16px 0' }} />
       <div style={{ marginBottom: 8 }}><span style={SEC}>People</span></div>
-      <PeopleFields schema={schema} people={people} updPerson={updP} brideName={brideName} setBN={setBN} groomName={groomName} setGN={setGN} />
+      <PeopleFields schema={schema} people={people} updPerson={updP} person1Name={person1Name} setP1={setP1} person2Name={person2Name} setP2={setP2} />
       <CFFields schema={schema} customFields={customFields} updCF={updCF} />
       <hr className="divider" style={{ margin: '16px 0' }} />
       <div style={{ marginBottom: 8 }}><span style={SEC}>Functions / events</span></div>
@@ -389,8 +408,8 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
     return fs;
   }, [ev.template?.fieldSchema]);
 
-  const [brideName, setBN] = useState(ev.brideName || '');
-  const [groomName, setGN] = useState(ev.groomName || '');
+  const [person1Name, setP1] = useState(ev.person1Name || '');
+  const [person2Name, setP2] = useState(ev.person2Name || '');
   const [eventType, setET] = useState(ev.eventType || 'wedding');
   const [community, setCom] = useState(ev.community || 'universal');
   const [slug, setSlug] = useState(ev.slug || '');
@@ -405,10 +424,10 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
     if (schema?.people?.length) {
       return schema.people.map(sp => {
         const x = ev.people?.find(p => p.role === sp.role);
-        return { role: sp.role, name: x?.name || '', photoUrl: x?.photoUrl || '' };
+        return { role: sp.role, name: x?.name || '', photoUrl: x?.photoUrl || '', extraData: x?.extraData || null, roleChoice: x?.extraData?.role_choice || '' };
       });
     }
-    return ev.people?.length ? ev.people.map(p => ({ role: p.role, name: p.name, photoUrl: p.photoUrl || '' })) : [];
+    return ev.people?.length ? ev.people.map(p => ({ role: p.role, name: p.name, photoUrl: p.photoUrl || '', extraData: p.extraData || null, roleChoice: p.extraData?.role_choice || '' })) : [];
   });
   const [customFields, setCF] = useState(() => {
     if (schema?.customFields?.length) {
@@ -493,11 +512,11 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
     const fnP = buildFnPayload(functions, toast);
     if (!fnP) return;
     const bodyFns = functions.map((fn, i) => ({ ...(fn.id ? { id: fn.id } : {}), ...fnP[i] }));
-    const d = deriveBrideGroom(people, brideName, groomName);
+    const d = deriveCouple(people, person1Name, person2Name);
     setSaving(true);
     try {
       await api.users.updateEventData(userId, {
-        eventId: ev.id, brideName: d.bride, groomName: d.groom, eventType, community, slug, language,
+        eventId: ev.id, person1Name: d.person1, person2Name: d.person2, eventType, community, slug, language,
         instagramUrl: instagramUrl.trim() || null,
         instagramHashtag: instagramHashtag.trim().replace(/^#+/, '') || null,
         socialYoutubeUrl: socialYoutubeUrl.trim() || null,
@@ -524,7 +543,7 @@ export function EditEventModal({ userId, event: ev, onClose, onSuccess }) {
         </p>
       )}
       <div style={{ marginBottom: 8 }}><span style={SEC}>People</span></div>
-      <PeopleFields schema={schema} people={people} updPerson={updP} brideName={brideName} setBN={setBN} groomName={groomName} setGN={setGN} />
+      <PeopleFields schema={schema} people={people} updPerson={updP} person1Name={person1Name} setP1={setP1} person2Name={person2Name} setP2={setP2} />
       <hr className="divider" style={{ margin: '16px 0' }} />
       <div style={{ marginBottom: 8 }}><span style={SEC}>Social links & guest features</span></div>
       <p style={HINT}>Icons and layout come from the template; hosts set URLs and toggles here.</p>

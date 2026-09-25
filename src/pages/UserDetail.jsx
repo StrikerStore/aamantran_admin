@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../lib/api';
+import { coupleLabel } from '../lib/couple';
 import { Select } from '../components/ui/Select';
 import { getInviteBaseUrl } from '../lib/config';
 import {
@@ -433,7 +434,7 @@ function PairedInvitesBlock({ userId, full, subset, onEdit, onFreeze, toast, onR
           PAIRED INVITATIONS
         </div>
         <div style={{ fontSize: '1.08rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-          {(full.brideName || '—')} &amp; {(full.groomName || '—')}
+          {coupleLabel(full)}
         </div>
         <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: 6, maxWidth: 720, lineHeight: 1.5 }}>
           Same template and couple; <strong>two separate guest URLs</strong> — one lists every function you added, the other only the ones marked for the partial invite.
@@ -652,7 +653,7 @@ function EventCard({ userId, event: ev, subtitle, onEdit, onSwap, onFreeze, toas
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ flex: '1 1 280px' }}>
           <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
-            {(ev.brideName || '—')} &amp; {(ev.groomName || '—')}
+            {coupleLabel(ev)}
             {ev.namesAreFrozen && (
               <span style={{ marginLeft: 8, fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--bg-overlay)', padding: '2px 8px', borderRadius: 4 }}>Names frozen</span>
             )}
@@ -902,7 +903,7 @@ function SwapPairedTemplateModal({ userId, pairs, intlBuyer, onClose, onSuccess 
           <Select className="form-select" value={invitePairId} onChange={(e) => setInvitePairId(e.target.value)}>
             {pairs.map((p) => (
               <option key={p.pairId} value={p.pairId}>
-                {(p.full.brideName || '—')} &amp; {(p.full.groomName || '—')} · /{p.full.slug} + /{p.subset.slug}
+                {coupleLabel(p.full)} · /{p.full.slug} + /{p.subset.slug}
               </option>
             ))}
           </Select>

@@ -24,7 +24,24 @@ const DEFAULT_FUNCTION_FIELDS = {
 };
 
 function emptyPersonRow() {
-  return { role: '', label: '', demoName: '', required: false, photo: false };
+  return { role: '', label: '', demoName: '', required: false, photo: false, roleOptions: '', demoRoleChoice: '' };
+}
+
+/** "Groom, Bride" → ["Groom", "Bride"]: trimmed, de-duplicated, empty dropped. */
+function parseRoleOptions(value) {
+  const list = Array.isArray(value) ? value : String(value ?? '').split(',');
+  const seen = new Set();
+  return list.map((o) => String(o ?? '').trim().slice(0, 40)).filter((o) => {
+    const k = o.toLowerCase();
+    if (!o || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+/** "Bride" → "bride", "Co-host" → "co_host" — the suffix of {{person1_is_<option>}}. */
+function roleOptionSlug(option) {
+  return String(option ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
 function emptyCustomFieldRow() {
@@ -37,7 +54,7 @@ function emptyMediaSlotRow() {
 
 /**
  * Form labels are printed verbatim in the couple's dashboard — nothing
- * substitutes Handlebars there. A label like "{{groom_name}} Father's Name"
+ * substitutes Handlebars there. A label like "{{person1_name}} Father's Name"
  * therefore reaches the customer as that exact text, so it is rejected here.
  * Template variables belong in the template HTML, not in a field label.
  */
@@ -206,7 +223,11 @@ export default function TemplateForm() {
           const demoPeople = t.demoData?.people || [];
           setPeople(fs.people.map(p => {
             const dp = demoPeople.find(d => d.role === p.role);
-            return { role: p.role, label: p.label || '', required: !!p.required, photo: !!p.photo, demoName: dp?.name || '' };
+            return {
+              role: p.role, label: p.label || '', required: !!p.required, photo: !!p.photo, demoName: dp?.name || '',
+              roleOptions: parseRoleOptions(p.roleOptions).join(', '),
+              demoRoleChoice: dp?.role_choice || '',
+            };
           }));
         }
         if (Array.isArray(fs.customFields) && fs.customFields.length) {
@@ -242,10 +263,10 @@ export default function TemplateForm() {
           setMediaSlots([]);
         }
       } else if (t.demoData) {
-        // Backward compat: auto-populate people from old brideName/groomName
+        // Backward compat: a template with demo names but no people schema
         const autoPeople = [];
-        if (t.demoData.brideName) autoPeople.push({ role: 'bride', label: 'Bride Name', demoName: t.demoData.brideName, required: true, photo: false });
-        if (t.demoData.groomName) autoPeople.push({ role: 'groom', label: 'Groom Name', demoName: t.demoData.groomName, required: true, photo: false });
+        if (t.demoData.person1Name) autoPeople.push({ ...emptyPersonRow(), role: 'person1', label: 'Person 1 Name', demoName: t.demoData.person1Name, required: true });
+        if (t.demoData.person2Name) autoPeople.push({ ...emptyPersonRow(), role: 'person2', label: 'Person 2 Name', demoName: t.demoData.person2Name, required: true });
         if (autoPeople.length) setPeople(autoPeople);
       }
 
@@ -398,9 +419,13 @@ export default function TemplateForm() {
   // ── Build payloads ──
   function buildFieldSchema() {
     return {
-      people: people.filter(p => p.role).map(p => ({
-        role: p.role, label: p.label || humanizeRole(p.role), required: !!p.required, photo: !!p.photo,
-      })),
+      people: people.filter(p => p.role).map(p => {
+        const roleOptions = parseRoleOptions(p.roleOptions);
+        return {
+          role: p.role, label: p.label || humanizeRole(p.role), required: !!p.required, photo: !!p.photo,
+          ...(roleOptions.length && { roleOptions }),
+        };
+      }),
       customFields: customFields.filter(cf => cf.key).map(cf => ({
         key: cf.key, label: cf.label || humanizeRole(cf.key), type: cf.type || 'text', required: !!cf.required,
       })),
@@ -418,8 +443,8 @@ export default function TemplateForm() {
   }
 
   function buildDemoPayload() {
-    const bridePerson = people.find(p => p.role === 'bride');
-    const groomPerson = people.find(p => p.role === 'groom');
+    const person1 = people.find(p => p.role === 'person1');
+    const person2 = people.find(p => p.role === 'person2');
 
     // Build media slot demo URL map { ganesh: ["https://..."], background_music: ["https://..."] }
     const mediaSlotDemoUrls = {};
@@ -428,8 +453,8 @@ export default function TemplateForm() {
     });
 
     return {
-      bride_name:    bridePerson?.demoName || '',
-      groom_name:    groomPerson?.demoName || '',
+      person1_name:  person1?.demoName || '',
+      person2_name:  person2?.demoName || '',
       wedding_date:  demoFunctions[0]?.date || '',
       venue_name:    demoFunctions[0]?.venueName || '',
       venue_address: demoFunctions[0]?.venueAddress || '',
@@ -440,9 +465,12 @@ export default function TemplateForm() {
       rsvp_enabled:        demoRsvpEnabled,
       guest_notes_enabled: demoGuestNotesEnabled,
       media_slot_demo_urls: mediaSlotDemoUrls,
-      people: people.filter(p => p.role).map(p => ({
-        role: p.role, name: p.demoName || '', photo_url: '',
-      })),
+      people: people.filter(p => p.role).map(p => {
+        // Only a choice that is still one of the options; the storefront demo
+        // shows the template's wording for it.
+        const choice = parseRoleOptions(p.roleOptions).find(o => o.toLowerCase() === String(p.demoRoleChoice || '').toLowerCase());
+        return { role: p.role, name: p.demoName || '', photo_url: '', ...(choice && { role_choice: choice }) };
+      }),
       custom_fields: customFields.filter(cf => cf.key).map(cf => ({
         key: cf.key, value: cf.demoValue || '',
       })),
@@ -1048,8 +1076,13 @@ export default function TemplateForm() {
         <CollapsibleCard title="Field Schema — People" defaultOpen style={sectionCard}>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
               Define the people/roles this template needs. Each role becomes a field in the invitation form.
-              The <strong>role</strong> is what your HTML uses (e.g. <code>bride</code> → <code>{'{{bride_name}}'}</code>).
+              The <strong>role</strong> is what your HTML uses (e.g. <code>person1</code> → <code>{'{{person1_name}}'}</code>,
+              {' '}<code>person1_father</code> → <code>{'{{person1_father_name}}'}</code>).
               The <strong>label</strong> is what the admin/user sees in the form.
+              {' '}<strong>Role options</strong> (e.g. <code>Groom, Bride</code>) give that name a dropdown in the couple's dashboard;
+              the template decides the wording from their pick.</p>
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14, marginTop: -6 }}>
+              The couple's two names are always <code>person1</code> and <code>person2</code> — never <code>bride</code> / <code>groom</code>.
             </p>
             {people.map((p, i) => (
               <div key={i} style={rowStyle}>
@@ -1060,11 +1093,11 @@ export default function TemplateForm() {
                 <div className="form-row">
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Role (variable name)</label>
-                    <input className="form-input" value={p.role} onChange={e => updatePerson(i, 'role', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))} placeholder="bride, groom, host, birthday_person..." />
+                    <input className="form-input" value={p.role} onChange={e => updatePerson(i, 'role', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))} placeholder="person1, person2, person1_father, host..." />
                   </div>
                   <div className="form-group" style={{ marginBottom: 8 }}>
                     <label className="form-label">Form label</label>
-                    <input className="form-input" value={p.label} onChange={e => updatePerson(i, 'label', e.target.value)} placeholder="Bride Name, Host Name..." />
+                    <input className="form-input" value={p.label} onChange={e => updatePerson(i, 'label', e.target.value)} placeholder="Person 1 Name, Host Name..." />
                     {LABEL_TOKEN_RE.test(p.label || '') && (
                       <div className="form-hint" style={{ color: '#b42318' }}>
                         Customers see this text exactly — remove the {'{{ }}'} variable.
@@ -1086,9 +1119,32 @@ export default function TemplateForm() {
                     </label>
                   </div>
                 </div>
+                <div className="form-row">
+                  <div className="form-group" style={{ marginBottom: 8 }}>
+                    <label className="form-label">Role options (comma separated)</label>
+                    <input className="form-input" value={p.roleOptions || ''} onChange={e => updatePerson(i, 'roleOptions', e.target.value)} placeholder="e.g. Groom, Bride — leave empty for no dropdown" />
+                    <div className="form-hint">The couple picks one of these for this name. Leave empty for parents, hosts and anniversary names.</div>
+                  </div>
+                  {parseRoleOptions(p.roleOptions).length > 0 && (
+                    <div className="form-group" style={{ marginBottom: 8 }}>
+                      <label className="form-label">Demo role (for preview)</label>
+                      <select className="form-input" value={p.demoRoleChoice || ''} onChange={e => updatePerson(i, 'demoRoleChoice', e.target.value)}>
+                        <option value="">— none —</option>
+                        {parseRoleOptions(p.roleOptions).map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
                 {p.role && (
                   <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
                     HTML variables: <code>{`{{${p.role}_name}}`}</code>{p.photo && <>, <code>{`{{${p.role}_photo}}`}</code></>}
+                    {parseRoleOptions(p.roleOptions).length > 0 && (
+                      <>, <code>{`{{${p.role}_role}}`}</code>
+                        {parseRoleOptions(p.roleOptions).map(o => (
+                          <span key={o}>, <code>{`{{${p.role}_is_${roleOptionSlug(o)}}}`}</code></span>
+                        ))}
+                      </>
+                    )}
                   </p>
                 )}
               </div>

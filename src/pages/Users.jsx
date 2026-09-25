@@ -6,6 +6,33 @@ import { Pagination } from '../components/ui/Pagination';
 import { useToast } from '../components/ui/Toast';
 import { useDebounced } from '../lib/useDebounced';
 
+/**
+ * A column header that sorts the table. The list is paged on the server, so the
+ * sort is sent with the query rather than applied to the rows on screen.
+ */
+function SortTh({ col, label, sort, onSort }) {
+  const active = sort.col === col;
+  const arrow = active ? (sort.dir === 'asc' ? '▲' : '▼') : '↕';
+  return (
+    <th aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        style={{
+          all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+          color: active ? 'var(--text-primary)' : 'inherit',
+        }}
+      >
+        {label}
+        <span aria-hidden="true" style={{ fontSize: '0.62rem', opacity: active ? 0.9 : 0.35 }}>{arrow}</span>
+      </button>
+    </th>
+  );
+}
+
+// Text columns start A→Z; counts and dates start with the largest / newest.
+const FIRST_DIR = { username: 'asc', email: 'asc', phone: 'asc', template: 'asc', events: 'desc', payments: 'desc', joined: 'desc' };
+
 export default function Users() {
   const navigate = useNavigate();
   const toast    = useToast();
@@ -17,17 +44,25 @@ export default function Users() {
   const [loading,    setLoading]    = useState(true);  // first load only
   const [refreshing, setRefreshing] = useState(false); // subsequent fetches
   const [showTest,   setShowTest]   = useState(false);
+  const [sort,       setSort]       = useState({ col: 'joined', dir: 'desc' });
   const loadedOnce = useRef(false);
 
   // Only the search term is debounced; page changes fire immediately.
   const debouncedSearch = useDebounced(search, 320);
+
+  function onSort(col) {
+    setSort((prev) => (prev.col === col
+      ? { col, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+      : { col, dir: FIRST_DIR[col] || 'asc' }));
+    setPage(1);
+  }
 
   useEffect(() => {
     const ctrl = new AbortController();
     if (loadedOnce.current) setRefreshing(true);
 
     api.users
-      .list({ search: debouncedSearch || undefined, page, limit: 20, includeTest: showTest ? 1 : undefined }, { signal: ctrl.signal })
+      .list({ search: debouncedSearch || undefined, page, limit: 20, includeTest: showTest ? 1 : undefined, sort: sort.col, dir: sort.dir }, { signal: ctrl.signal })
       .then((res) => {
         setUsers(res.data);
         setTotal(res.total);
@@ -44,7 +79,7 @@ export default function Users() {
     // Cancel in flight when the query changes or the page unmounts, so a slow
     // early response can never overwrite a newer one.
     return () => ctrl.abort();
-  }, [debouncedSearch, page, showTest, toast]);
+  }, [debouncedSearch, page, showTest, sort, toast]);
 
   return (
     <div>
@@ -95,12 +130,13 @@ export default function Users() {
           <table>
             <thead>
               <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Events</th>
-                <th>Payments</th>
-                <th>Joined</th>
+                <SortTh col="username" label="Username" sort={sort} onSort={onSort} />
+                <SortTh col="email"    label="Email"    sort={sort} onSort={onSort} />
+                <SortTh col="phone"    label="Phone"    sort={sort} onSort={onSort} />
+                <SortTh col="template" label="Template" sort={sort} onSort={onSort} />
+                <SortTh col="events"   label="Events"   sort={sort} onSort={onSort} />
+                <SortTh col="payments" label="Payments" sort={sort} onSort={onSort} />
+                <SortTh col="joined"   label="Joined"   sort={sort} onSort={onSort} />
               </tr>
             </thead>
             <tbody>
@@ -120,6 +156,7 @@ export default function Users() {
                     <div className="td-primary">{u.email}</div>
                   </td>
                   <td>{formatPhone(u.phone, u.phoneCountryCode)}</td>
+                  <td>{u.templates?.length ? u.templates.join(', ') : <span style={{ color: 'var(--text-muted)' }}>—</span>}</td>
                   <td>{u._count?.events ?? 0}</td>
                   <td>{u._count?.payments ?? 0}</td>
                   <td>{formatDate(u.createdAt)}</td>

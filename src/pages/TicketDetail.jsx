@@ -261,7 +261,7 @@ export default function TicketDetail() {
             <div className="card-body">
               <table className="kv-table">
                 <tbody>
-                  <tr><td>Couple</td><td>{[ticket.event.brideName, ticket.event.groomName].filter(Boolean).join(' & ') || '—'}</td></tr>
+                  <tr><td>Couple</td><td>{[ticket.event.person1Name, ticket.event.person2Name].filter(Boolean).join(' & ') || '—'}</td></tr>
                   <tr><td>Slug</td><td><span className="mono">/{ticket.event.slug}</span></td></tr>
                 </tbody>
               </table>
