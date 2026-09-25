@@ -44,6 +44,20 @@ function roleOptionSlug(option) {
   return String(option ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
+/**
+ * Guest Options items the couple's builder can show, in its order. A template
+ * that never set this shows all of them — so every live template keeps today's
+ * builder until an admin changes it here.
+ */
+const GUEST_OPTIONS = [
+  { key: 'instagram', label: 'Instagram link' },
+  { key: 'hashtag',   label: 'Instagram hashtag' },
+  { key: 'youtube',   label: 'YouTube link' },
+  { key: 'rsvp',      label: 'RSVP on/off switch' },
+  { key: 'wishes',    label: 'Guest wishes on/off switch' },
+];
+const ALL_DASHBOARD_STEPS = { guestOptions: GUEST_OPTIONS.map((o) => o.key), showMedia: true };
+
 function emptyCustomFieldRow() {
   return { key: '', label: '', type: 'text', demoValue: '', required: false };
 }
@@ -145,6 +159,8 @@ export default function TemplateForm() {
   const [customFields, setCustomFields]   = useState([]);
   const [mediaSlots, setMediaSlots]       = useState([]);
   const [functionFields, setFunctionFields] = useState({ ...DEFAULT_FUNCTION_FIELDS });
+  // Which builder steps / Guest Options items couples see (fieldSchema.dashboard).
+  const [dashboardSteps, setDashboardSteps] = useState(ALL_DASHBOARD_STEPS);
 
   // ── Section 3: Demo data (values for preview) ──
   const [demoFunctions, setDemoFunctions] = useState([emptyDemoFunctionRow(0)]);
@@ -262,6 +278,12 @@ export default function TemplateForm() {
         } else {
           setMediaSlots([]);
         }
+        // Not set yet = everything on, exactly as couples see it today.
+        const d = fs.dashboard && typeof fs.dashboard === 'object' ? fs.dashboard : {};
+        setDashboardSteps({
+          guestOptions: Array.isArray(d.guestOptions) ? d.guestOptions : ALL_DASHBOARD_STEPS.guestOptions,
+          showMedia: d.showMedia !== false,
+        });
       } else if (t.demoData) {
         // Backward compat: a template with demo names but no people schema
         const autoPeople = [];
@@ -439,6 +461,10 @@ export default function TemplateForm() {
         allowUrl: s.allowUrl !== false,
       })),
       functionFields: { ...functionFields },
+      dashboard: {
+        guestOptions: GUEST_OPTIONS.map((o) => o.key).filter((k) => dashboardSteps.guestOptions.includes(k)),
+        showMedia: !!dashboardSteps.showMedia,
+      },
     };
   }
 
@@ -1419,6 +1445,53 @@ export default function TemplateForm() {
                 );
               })}
             </div>
+        </CollapsibleCard>
+
+        {/* ── Couple's dashboard steps ── */}
+        <CollapsibleCard title="Couple's dashboard steps" defaultOpen style={sectionCard}>
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: 14 }}>
+              Choose what couples see while building their invitation, so they only get steps this design uses.
+              Everything is on by default.
+            </p>
+            <div className="form-group">
+              <label className="form-label">Guest Options step — items shown</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 22px' }}>
+                {GUEST_OPTIONS.map((o) => (
+                  <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.86rem', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={dashboardSteps.guestOptions.includes(o.key)}
+                      onChange={() => setDashboardSteps((prev) => ({
+                        ...prev,
+                        guestOptions: prev.guestOptions.includes(o.key)
+                          ? prev.guestOptions.filter((k) => k !== o.key)
+                          : [...prev.guestOptions, o.key],
+                      }))}
+                    />
+                    {o.label}
+                  </label>
+                ))}
+              </div>
+              <div className="form-hint">
+                {dashboardSteps.guestOptions.length
+                  ? 'Couples only see the ticked items. RSVP and guest wishes stay on for them unless they switch them off.'
+                  : 'Nothing ticked — couples will not see the Guest Options step at all.'}
+              </div>
+            </div>
+            <div className="form-group">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.86rem', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={dashboardSteps.showMedia}
+                  onChange={() => setDashboardSteps((prev) => ({ ...prev, showMedia: !prev.showMedia }))}
+                />
+                Show the Photos &amp; Music step
+              </label>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              Language step: shown only when two or more languages are selected for this template
+              {' '}(currently {languages.length > 1 ? `${languages.length} — shown` : 'one — hidden'}).
+            </p>
         </CollapsibleCard>
 
         {/* ── Demo Functions ── */}
