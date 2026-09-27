@@ -15,8 +15,8 @@ const VIA_LABELS = { inline: 'Inside the sheet', 'full-screen': 'Full screen' };
  * the website's anonymous events (kept 90 days), and sales from the orders.
  * Nothing a visitor typed — names, date, venue, city — is ever shown here.
  */
-export default function AnalyticsTrialDemos({ days, storefront }) {
-  const { data, loading, refreshing, error, reload } = useAnalytics(api.analytics.trialDemos, days, storefront);
+export default function AnalyticsTrialDemos({ range, storefront }) {
+  const { data, loading, refreshing, error, reload } = useAnalytics(api.analytics.trialDemos, range, storefront);
 
   // Live demos count down in minutes; refresh every 30s while the tab is visible.
   useEffect(() => {

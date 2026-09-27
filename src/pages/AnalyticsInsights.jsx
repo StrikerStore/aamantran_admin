@@ -14,8 +14,8 @@ const TONES = {
  * Campaign insights: written findings first, then the tables they come from —
  * channels and campaigns, designs, timing, devices and countries.
  */
-export default function AnalyticsInsights({ days, storefront }) {
-  const { data, loading, refreshing, error } = useAnalytics(api.analytics.insights, days, storefront);
+export default function AnalyticsInsights({ range, storefront }) {
+  const { data, loading, refreshing, error } = useAnalytics(api.analytics.insights, range, storefront);
 
   if (error) return <div className="card" style={{ padding: 20, color: 'var(--rose, #b42318)' }}>{error}</div>;
   if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>;

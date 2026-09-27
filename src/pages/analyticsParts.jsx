@@ -2,7 +2,20 @@ import { useEffect, useRef, useState } from 'react';
 
 /* Shared building blocks for the Analytics tabs. */
 
-export function isoDay(d) {
+const IST_OFFSET_MS = 330 * 60 * 1000;
+
+/**
+ * Today's date in India, 'YYYY-MM-DD', whatever timezone this browser is in.
+ * The backend reads every from/to as an IST calendar day.
+ */
+export function istToday() {
+  return new Date(Date.now() + IST_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** 'YYYY-MM-DD' moved by n days. Pure calendar arithmetic, no timezone. */
+export function shiftDay(ymd, n) {
+  const d = new Date(`${ymd}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
 
@@ -15,12 +28,14 @@ export function cap(s) {
 }
 
 /**
- * Load one analytics endpoint for the selected range and storefront.
+ * Load one analytics endpoint for the selected range ({ from, to } as IST
+ * 'YYYY-MM-DD') and storefront.
  *
  * Switching range keeps the current figures on screen, dimmed, rather than
  * blanking the tab back to a spinner.
  */
-export function useAnalytics(fetcher, days, storefront) {
+export function useAnalytics(fetcher, range, storefront) {
+  const { from, to } = range;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,9 +52,7 @@ export function useAnalytics(fetcher, days, storefront) {
     if (!loadedOnce.current) setLoading(true);
     else if (!silent) setRefreshing(true);
     setError('');
-    const to = new Date();
-    const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    fetcher({ from: isoDay(from), to: isoDay(to), ...(storefront ? { storefront } : {}) })
+    fetcher({ from, to, ...(storefront ? { storefront } : {}) })
       .then((d) => { if (!cancelled) setData(d); })
       .catch((e) => { if (!cancelled) setError(e.message || 'Failed to load analytics'); })
       .finally(() => {
@@ -51,7 +64,7 @@ export function useAnalytics(fetcher, days, storefront) {
     return () => { cancelled = true; };
     // fetcher is a stable api method.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, storefront, tick]);
+  }, [from, to, storefront, tick]);
 
   const reload = ({ silent = false } = {}) => {
     silentRef.current = silent;

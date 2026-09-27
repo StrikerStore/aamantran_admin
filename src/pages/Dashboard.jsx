@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { formatDate, formatMoney } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
 import { Select } from '../components/ui/Select';
+import { istToday, shiftDay } from './analyticsParts';
 
 /**
  * What the business did, over a period you choose.
@@ -29,10 +30,9 @@ const RANGES = [
 ];
 
 /** YYYY-MM-DD, `days` ago in UTC — the same day boundaries the API uses. */
+// The backend reads from/to as IST calendar days.
 function dayKey(daysAgo) {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - daysAgo);
-  return d.toISOString().slice(0, 10);
+  return shiftDay(istToday(), -daysAgo);
 }
 
 export default function Dashboard() {

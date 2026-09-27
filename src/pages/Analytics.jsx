@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import {
-  useAnalytics, fmt, cap, StatCard, LegendDot, TwoCol, BreakdownCard, BreakdownRows, Funnel,
+  useAnalytics, fmt, cap, istToday, shiftDay, StatCard, LegendDot, TwoCol, BreakdownCard, BreakdownRows, Funnel,
 } from './analyticsParts';
 import AnalyticsInsights from './AnalyticsInsights';
 import AnalyticsTrialDemos from './AnalyticsTrialDemos';
@@ -20,6 +20,12 @@ const PRESETS = [
   { label: '30 days', days: 29 },
   { label: '90 days', days: 89 },
 ];
+
+// The backend caps a range at 92 days (inclusive), so a custom pick wider than
+// that drags the other end along rather than being silently cut short.
+const MAX_SPAN_DAYS = 91;
+
+const dateInputStyle = { width: 148, padding: '5px 10px', fontSize: '0.8rem' };
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
@@ -47,9 +53,31 @@ function readTab() {
 }
 
 export default function Analytics() {
+  // A preset (days back from today, IST) or, when null, the custom from/to.
   const [days, setDays] = useState(29);
+  const [custom, setCustom] = useState(null);
   const [storefront, setStorefront] = useState('');
   const [tab, setTab] = useState(readTab);
+
+  const today = istToday();
+  const range = days != null ? { from: shiftDay(today, -days), to: today } : custom;
+
+  const choosePreset = (d) => { setDays(d); setCustom(null); };
+
+  // Editing either end starts from what is on screen, so switching from
+  // "30 days" to a custom range only changes the date you touched.
+  const setFrom = (value) => {
+    if (!value) return;
+    const to = range.to < value ? value : range.to;
+    setCustom({ from: value, to: to > shiftDay(value, MAX_SPAN_DAYS) ? shiftDay(value, MAX_SPAN_DAYS) : to });
+    setDays(null);
+  };
+  const setTo = (value) => {
+    if (!value) return;
+    const from = range.from > value ? value : range.from;
+    setCustom({ from: from < shiftDay(value, -MAX_SPAN_DAYS) ? shiftDay(value, -MAX_SPAN_DAYS) : from, to: value });
+    setDays(null);
+  };
 
   const chooseTab = (key) => {
     setTab(key);
@@ -80,11 +108,33 @@ export default function Analytics() {
               <button
                 key={p.days}
                 className={`btn btn-sm ${days === p.days ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setDays(p.days)}
+                onClick={() => choosePreset(p.days)}
               >
                 {p.label}
               </button>
             ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              className="form-input"
+              type="date"
+              style={dateInputStyle}
+              value={range.from}
+              max={today}
+              aria-label="From date"
+              onChange={(e) => setFrom(e.target.value)}
+            />
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>to</span>
+            <input
+              className="form-input"
+              type="date"
+              style={dateInputStyle}
+              value={range.to}
+              min={range.from}
+              max={today}
+              aria-label="To date"
+              onChange={(e) => setTo(e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -103,15 +153,15 @@ export default function Analytics() {
         ))}
       </div>
 
-      {tab === 'overview' && <Overview days={days} storefront={storefront} />}
-      {tab === 'insights' && <AnalyticsInsights days={days} storefront={storefront} />}
-      {tab === 'trial' && <AnalyticsTrialDemos days={days} storefront={storefront} />}
+      {tab === 'overview' && <Overview range={range} storefront={storefront} />}
+      {tab === 'insights' && <AnalyticsInsights range={range} storefront={storefront} />}
+      {tab === 'trial' && <AnalyticsTrialDemos range={range} storefront={storefront} />}
     </div>
   );
 }
 
-function Overview({ days, storefront }) {
-  const { data, loading, refreshing, error } = useAnalytics(api.analytics.summary, days, storefront);
+function Overview({ range, storefront }) {
+  const { data, loading, refreshing, error } = useAnalytics(api.analytics.summary, range, storefront);
   const [live, setLive] = useState(null);
 
   // Live visitors refresh every 30s — but only while the tab is actually
