@@ -46,6 +46,30 @@ export function deriveUsdCents(inrPaise, usdInrRate, multiplier) {
   return (Math.floor(rawCents / 1000) + 1) * 1000 - 1;
 }
 
+/**
+ * What an India buyer pays for a listed price, with no coupon, split into the
+ * taxable value and the GST.
+ *
+ * MIRRORS aamantran_backend/src/services/pricing.service.js `computeBreakup`
+ * (India, no coupon). Display only: the backend decides the charge.
+ *   - inclusive: total = price; taxable = round(price * 100 / (100 + rate)); GST = total - taxable
+ *   - exclusive: taxable = price; GST = round(price * rate / 100); total = taxable + GST
+ *
+ * @returns {{ taxable: number, gst: number, total: number } | null} paise
+ */
+export function inrPriceBreakup(pricePaise, gstPercent, gstInclusive) {
+  const price = Number(pricePaise);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const net  = Math.max(100, Math.round(price));
+  const rate = Math.max(0, Number(gstPercent) || 0);
+  if (gstInclusive) {
+    const taxable = Math.round((net * 100) / (100 + rate));
+    return { taxable, gst: net - taxable, total: net };
+  }
+  const gst = Math.round((net * rate) / 100);
+  return { taxable: net, gst, total: net + gst };
+}
+
 /** '+91 9876543210' from the split columns, or '—' when unset. */
 export function formatPhone(phone, phoneCountryCode) {
   if (!phone) return '—';

@@ -259,7 +259,12 @@ export default function Templates() {
                       </div>
                     )}
                   </td>
-                  <td>{t.gstPercent ?? 0}%</td>
+                  <td>
+                    {t.gstPercent ?? 0}%
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {t.gstInclusive === false ? 'excl. — added at checkout' : 'incl. in price'}
+                    </div>
+                  </td>
 
                   <td>{t.buyerCount}</td>
                   <td><Badge status={t.isActive ? 'active' : 'draft'} /></td>

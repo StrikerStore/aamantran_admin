@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { Select } from '../components/ui/Select';
 import { resolvePublicUrl } from '../lib/resolvePublicUrl';
 import { getInviteBaseUrl } from '../lib/config';
-import { formatCurrency, formatMoney, deriveUsdCents } from '../lib/utils';
+import { formatCurrency, formatMoney, deriveUsdCents, inrPriceBreakup } from '../lib/utils';
 import { COMMUNITIES, EVENT_TYPE_GROUPS, LANGUAGES, TEMPLATE_BADGES, TEMPLATE_HIGHLIGHTS } from '../lib/constants';
 import { Button } from '../components/ui/Button';
 import { CollapsibleCard } from '../components/ui/CollapsibleCard';
@@ -136,6 +136,8 @@ export default function TemplateForm() {
   const [price,         setPrice]         = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const [gstPercent,    setGstPercent]    = useState('0');
+  // New templates default to a GST-inclusive price, like the backend column.
+  const [gstInclusive,  setGstInclusive]  = useState(true);
   const [markupMultiplier, setMarkupMultiplier] = useState('');
   const [pricingSettings,  setPricingSettings]  = useState(null);
   const [aboutText,     setAboutText]     = useState('');
@@ -198,6 +200,7 @@ export default function TemplateForm() {
       setPrice(String(t.price / 100));
       setOriginalPrice(t.originalPrice ? String(t.originalPrice / 100) : '');
       setGstPercent(String(t.gstPercent ?? 0));
+      setGstInclusive(t.gstInclusive !== false);
     setMarkupMultiplier(t.markupMultiplier != null ? String(t.markupMultiplier) : '');
       setAboutText(t.aboutText || '');
       setShortDescription(t.shortDescription || '');
@@ -534,6 +537,12 @@ export default function TemplateForm() {
     return cents == null ? null : formatMoney(cents, 'USD');
   })();
 
+  // What an India buyer pays, so the inclusive/exclusive choice is never a guess.
+  const inrPreview = (() => {
+    if (!price) return null;
+    return inrPriceBreakup(Math.round(Number(price) * 100), gstPercent, gstInclusive);
+  })();
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (languages.length === 0) { toast('Select at least one language', 'error'); return; }
@@ -562,6 +571,7 @@ export default function TemplateForm() {
         fd.append('price',        String(Math.round(Number(price) * 100)));
         fd.append('originalPrice', originalPrice ? String(Math.round(Number(originalPrice) * 100)) : '');
         fd.append('gstPercent',   String(Math.max(0, Number(gstPercent || 0))));
+        fd.append('gstInclusive', String(gstInclusive));
     // '' clears it back to the global default; the backend treats blank as null.
     fd.append('markupMultiplier', markupMultiplier === '' ? '' : String(Number(markupMultiplier)));
         fd.append('aboutText',    aboutText);
@@ -608,6 +618,7 @@ export default function TemplateForm() {
         fd.append('price',        String(Math.round(Number(price) * 100)));
         if (originalPrice) fd.append('originalPrice', String(Math.round(Number(originalPrice) * 100)));
         fd.append('gstPercent',   String(Math.max(0, Number(gstPercent || 0))));
+        fd.append('gstInclusive', String(gstInclusive));
     // '' clears it back to the global default; the backend treats blank as null.
     fd.append('markupMultiplier', markupMultiplier === '' ? '' : String(Number(markupMultiplier)));
         fd.append('aboutText',    aboutText);
@@ -925,6 +936,21 @@ export default function TemplateForm() {
                 <input className="form-input" type="number" min="0" max="100" step="1" value={gstPercent} onChange={e => setGstPercent(e.target.value)} placeholder="18" />
                 <p className="form-hint">India only — international sales are zero-rated.</p>
               </div>
+              <div className="form-group">
+                <label className="form-label">Selling price is</label>
+                <Select className="form-select" value={gstInclusive ? 'inclusive' : 'exclusive'} onChange={e => setGstInclusive(e.target.value === 'inclusive')}>
+                  <option value="inclusive">Inclusive of GST</option>
+                  <option value="exclusive">Exclusive of GST (added at checkout)</option>
+                </Select>
+                <p className="form-hint">
+                  {inrPreview
+                    ? <>Buyer in India pays <strong>{formatCurrency(inrPreview.total)}</strong>
+                        {inrPreview.gst > 0 && <> ({formatCurrency(inrPreview.taxable)} + {formatCurrency(inrPreview.gst)} GST)</>}</>
+                    : 'Inclusive: the selling price is the total. Exclusive: GST is added on top.'}
+                </p>
+              </div>
+            </div>
+            <div className="form-row">
               <div className="form-group">
                 <label className="form-label">International multiplier</label>
                 <input
