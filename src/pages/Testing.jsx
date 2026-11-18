@@ -13,6 +13,53 @@ import { COMMUNITIES } from '../lib/constants';
 import { formatCurrency } from '../lib/utils';
 
 const AUTOPUBLISH_KEY = 'aam_testing_autopublish';
+const MAX_DATA_FILE_BYTES = 1024 * 1024;
+
+const SECTION_LABEL = {
+  fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.06em',
+  color: 'var(--text-muted)', fontWeight: 700, marginBottom: 6,
+};
+
+function plural(n, one, many = `${one}s`) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** "4 people · 3 functions · 12 custom fields · 6 media files", for the sections a file replaced. */
+function describeApplied(applied = {}) {
+  const parts = [];
+  if (applied.people       != null) parts.push(plural(applied.people, 'person', 'people'));
+  if (applied.functions    != null) parts.push(plural(applied.functions, 'function'));
+  if (applied.customFields != null) parts.push(plural(applied.customFields, 'custom field'));
+  if (applied.media        != null) parts.push(plural(applied.media, 'media file'));
+  return parts.length ? parts.join(' · ') : 'links and settings only';
+}
+
+/** The outcome of the last JSON upload: what was filled, or why nothing was. */
+function DataResult({ result }) {
+  const tone = result.ok
+    ? { bg: 'var(--mint-soft)', fg: 'var(--mint-deep)' }
+    : { bg: 'var(--rose-soft)', fg: 'var(--rose-deep)' };
+  const list = { margin: '6px 0 0', paddingLeft: 18, lineHeight: 1.6 };
+  return (
+    <div style={{ marginTop: 12, fontSize: '0.82rem' }}>
+      <div style={{ padding: '10px 12px', borderRadius: 'var(--r-sm)', background: tone.bg, color: tone.fg }}>
+        <strong>{result.fileName}</strong>
+        {result.ok
+          ? <> filled the invitation: {describeApplied(result.applied)}.</>
+          : <> was not applied. Nothing changed.</>}
+        {!result.ok && result.errors?.length > 0 && (
+          <ul style={list}>{result.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
+        )}
+      </div>
+      {result.warnings?.length > 0 && (
+        <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 'var(--r-sm)', background: 'var(--lemon-soft)', color: 'var(--lemon-deep)' }}>
+          <strong>Check {result.warnings.length === 1 ? 'this' : 'these'}:</strong>
+          <ul style={list}>{result.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** Small labelled value with a copy button — used for the credentials. */
 function CopyField({ label, value, mono = true }) {
@@ -59,6 +106,11 @@ export default function Testing() {
   const [rotateValue, setRotateValue] = useState('');
 
   const [confirm, setConfirm] = useState(null);
+
+  // Test data from a JSON file
+  const dataFileRef = useRef(null);
+  const [dataBusy,   setDataBusy]   = useState(null); // 'download' | 'upload' | null
+  const [dataResult, setDataResult] = useState(null);
   const [autoPublish, setAutoPublish] = useState(
     () => localStorage.getItem(AUTOPUBLISH_KEY) === '1'
   );
@@ -139,9 +191,55 @@ export default function Testing() {
     if (res?.generatedPassword) setNewPassword(res.generatedPassword);
   }
 
+  async function handleDownloadData() {
+    setDataBusy('download');
+    try {
+      await api.testing.downloadEventData(state?.event?.template?.slug);
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setDataBusy(null);
+    }
+  }
+
+  async function handleUploadData(e) {
+    const file = e.target.files?.[0];
+    // Cleared so picking the same file again, after fixing it, fires onChange.
+    e.target.value = '';
+    if (!file) return;
+
+    const fail = (errors) => setDataResult({ ok: false, fileName: file.name, errors });
+    if (file.size > MAX_DATA_FILE_BYTES) return fail(['The file is larger than 1 MB']);
+
+    let data;
+    try {
+      data = JSON.parse(await file.text());
+    } catch (err) {
+      return fail([`This is not valid JSON: ${err.message}`]);
+    }
+
+    setDataBusy('upload');
+    try {
+      const res = await api.testing.uploadEventData(data);
+      setDataResult({ ok: true, fileName: file.name, applied: res.applied, warnings: res.warnings || [] });
+      toast('Test data applied', 'success');
+      await loadStatus();
+    } catch (err) {
+      setDataResult({
+        ok: false,
+        fileName: file.name,
+        errors:   err.body?.errors?.length ? err.body.errors : [err.message],
+        warnings: err.body?.warnings || [],
+      });
+    } finally {
+      setDataBusy(null);
+    }
+  }
+
   async function handleLoad() {
     const tpl = confirm?.template;
     setConfirm(null);
+    setDataResult(null);
     await run(
       () => api.testing.loadTemplate({
         templateId:   tpl.id,
@@ -319,6 +417,42 @@ export default function Testing() {
                   Clear test event
                 </Button>
               </div>
+
+              {/* Test data — fill the invitation from a JSON file instead of the wizard */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+                <div style={SECTION_LABEL}>Test data</div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '0 0 10px', lineHeight: 1.6 }}>
+                  Fill this invitation from a JSON file instead of typing it into the wizard. Start from
+                  the JSON template: it lists every name, field and media slot this template uses,
+                  filled in with its demo data.
+                </p>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <Button size="sm" variant="secondary" loading={dataBusy === 'download'} onClick={handleDownloadData}>
+                    Download JSON template
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    loading={dataBusy === 'upload'}
+                    disabled={dataBusy !== null}
+                    onClick={() => dataFileRef.current?.click()}
+                  >
+                    Upload JSON
+                  </Button>
+                  <input
+                    ref={dataFileRef}
+                    type="file"
+                    accept=".json,application/json"
+                    style={{ display: 'none' }}
+                    onChange={handleUploadData}
+                  />
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: 8, lineHeight: 1.6 }}>
+                  Each section in the file replaces that part of the invitation. Sections you leave
+                  out stay as they are.
+                </p>
+                {dataResult && <DataResult result={dataResult} />}
+              </div>
             </div>
           )}
         </div>
@@ -482,6 +616,7 @@ export default function Testing() {
           message="Delete the current test invitation and all its data? The account stays; only the invitation is removed."
           onConfirm={async () => {
             setConfirm(null);
+            setDataResult(null);
             await run(() => api.testing.reset(), 'Test event cleared');
           }}
           onCancel={() => setConfirm(null)}

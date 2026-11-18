@@ -267,6 +267,10 @@ export const api = {
     loadTemplate:   (body)     => request('POST', '/testing/load-template', { body }),
     setPublished:   (publish)  => request('POST', '/testing/publish', { body: { publish } }),
     repin:          (renderSource) => request('POST', '/testing/repin', { body: { renderSource } }),
+    // The loaded template's demo data as an editable JSON file, and the upload back.
+    // The name is passed in: CORS doesn't expose Content-Disposition cross-origin.
+    downloadEventData: (slug) => download('/testing/event-data/sample', null, `${slug || 'test'}-test-data.json`),
+    uploadEventData:   (data) => request('POST', '/testing/event-data', { body: { data } }),
     session:        ()         => request('POST', '/testing/session'),
     reset:          ()         => request('POST', '/testing/reset'),
   },
